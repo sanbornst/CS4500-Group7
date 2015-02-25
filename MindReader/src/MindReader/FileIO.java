@@ -40,12 +40,14 @@ public interface FileIO {
      * 
      * @throws IOException
      */
-    public void read(ITrace2D channel, int id, int start, int length, int frequency) throws IOException;
+    public void read(ITrace2D channel, int id, int start, int length,
+            int frequency) throws IOException;
 
     /**
      * Gets channel information from the file
      * 
      * @return map of channel ID to name
      */
+    //TODO consider custom class for channel info
     public HashMap<Integer,String> getChannels();
 }
