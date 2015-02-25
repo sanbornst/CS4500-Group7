@@ -3,7 +3,7 @@ package MindReader;
 import info.monitorenter.gui.chart.ITrace2D;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * Binary File IO Object
@@ -36,7 +36,7 @@ public class BinaryIO implements FileIO {
     }
 
     @Override
-    public HashMap<Integer, String> getChannels() {
+    public ArrayList<ChannelInfo> getChannels() {
         // TODO Auto-generated method stub
         return null;
     }

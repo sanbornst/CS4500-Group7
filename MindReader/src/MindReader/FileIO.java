@@ -3,7 +3,7 @@ package MindReader;
 import info.monitorenter.gui.chart.ITrace2D;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * File IO Interface
@@ -46,8 +46,7 @@ public interface FileIO {
     /**
      * Gets channel information from the file
      * 
-     * @return map of channel ID to name
+     * @return arrayList containing channelInfo
      */
-    //TODO consider custom class for channel info
-    public HashMap<Integer,String> getChannels();
+    public ArrayList<ChannelInfo> getChannels();
 }
