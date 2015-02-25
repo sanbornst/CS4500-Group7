@@ -24,18 +24,24 @@ public class BinaryIO implements FileIO {
     private ByteBuffer header;               // copy of just the header
     private ArrayList<ChannelInfo> channels; // ArrayList for channel info
     
+    BinaryIO(){
+        this.source = null;
+        this.headerLength = -1;
+        this.startOfData = -1;
+        this.header = null;
+        this.channels = new ArrayList<ChannelInfo>();
+    }
     
     public void open(String path) throws IOException {
         this.source = new FileInputStream(path);
         
-        //TODO read header here
+        //TODO fill & read header here
     }
 
     public void close() throws IOException {
         this.source.close();
     }
 
-    @Override
     public void read(ITrace2D channel, int id, int start, int length,
             int frequency) throws IOException {
         // TODO Auto-generated method stub

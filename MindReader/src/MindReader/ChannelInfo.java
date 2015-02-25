@@ -4,7 +4,6 @@ package MindReader;
  * Holds information about a specific channel
  * 
  * @author Christopher Curreri
- *
  */
 public class ChannelInfo {
     private int id;
