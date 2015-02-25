@@ -4,6 +4,10 @@ import info.monitorenter.gui.chart.ITrace2D;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.io.FileInputStream;
+import java.nio.ByteBuffer;
+
+//TODO Migrate prototype code
 
 /**
  * Binary File IO Object
@@ -14,18 +18,21 @@ import java.util.ArrayList;
  * @author Christopher Curreri
  */
 public class BinaryIO implements FileIO {
-    //TODO Migrate prototype code
+    private FileInputStream source;          // input file stream
+    private int headerLength;                // length of the header
+    private int startOfData;                 // start location of data
+    private ByteBuffer header;               // copy of just the header
+    private ArrayList<ChannelInfo> channels; // ArrayList for channel info
     
-    @Override
+    
     public void open(String path) throws IOException {
-        // TODO Auto-generated method stub
-
+        this.source = new FileInputStream(path);
+        
+        //TODO read header here
     }
 
-    @Override
     public void close() throws IOException {
-        // TODO Auto-generated method stub
-
+        this.source.close();
     }
 
     @Override
@@ -35,10 +42,8 @@ public class BinaryIO implements FileIO {
 
     }
 
-    @Override
     public ArrayList<ChannelInfo> getChannels() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.channels;
     }
 
 }

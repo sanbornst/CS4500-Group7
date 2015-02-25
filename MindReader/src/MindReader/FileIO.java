@@ -48,5 +48,5 @@ public interface FileIO {
      * 
      * @return arrayList containing channelInfo
      */
-    public ArrayList<ChannelInfo> getChannels();
+    public ArrayList<ChannelInfo> getChannels() throws IOException;
 }
