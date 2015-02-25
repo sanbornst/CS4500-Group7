@@ -1,3 +1,4 @@
+package MindReader;
 
 public class MindReader {
 
