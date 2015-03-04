@@ -3,9 +3,10 @@ package MindReader;
 import info.monitorenter.gui.chart.ITrace2D;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.io.FileInputStream;
 import java.nio.ByteBuffer;
+
 
 //TODO Migrate prototype code (in progress...)
 
@@ -18,9 +19,9 @@ import java.nio.ByteBuffer;
  * @author Christopher Curreri
  */
 public class BinaryIO implements FileIO {
-    private FileInputStream source;          // input file stream
-    private int headerLength;                // length of the header
-    private ArrayList<ChannelInfo> channels; // arrayList for channel info
+    private RandomAccessFile source;          // input file stream
+    private int headerLength;                 // length of the header
+    private ArrayList<ChannelInfo> channels;  // arrayList for channel info
     
     BinaryIO(){
         this.source = null;
@@ -126,7 +127,7 @@ public class BinaryIO implements FileIO {
         if (this.source != null){ throw new IOException("File already open!"); }
         
         // attempt to get a file handle
-        this.source = new FileInputStream(path);
+        this.source = new RandomAccessFile(path, "r");
         
         
         // verify and read the header
