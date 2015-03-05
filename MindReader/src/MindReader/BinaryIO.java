@@ -19,13 +19,16 @@ import java.nio.ByteBuffer;
  */
 public class BinaryIO implements FileIO {
     private RandomAccessFile source;          // input file stream
-    private int headerLength;                 // length of the header
+    private int startOfData;                  // length of the header
     private float scanRate;                   // sample rate of file
     private ArrayList<ChannelInfo> channels;  // arrayList for channel info
     
+    // CONSTANTS
+    private static final int dataSize = 2;
+    
     BinaryIO(){
         this.source = null;
-        this.headerLength = -1;
+        this.startOfData = -1;
         this.scanRate = -1;
         this.channels = new ArrayList<ChannelInfo>();
     }
@@ -38,6 +41,7 @@ public class BinaryIO implements FileIO {
     private void readHeader() throws IOException{
         byte[] firstBytes = new byte[8];
         ByteBuffer bb;
+        int headerLength = 0;
         
         System.out.println("Reading Header...");
         
@@ -52,16 +56,17 @@ public class BinaryIO implements FileIO {
         // verify file is a MindWare file (byte2 = byte1 - 4)
         if (byte2 == byte1 - 4){
             // valid file, store header length and continue
-            this.headerLength = byte1;
-            System.out.println("   Header Length: " + this.headerLength);
+            headerLength = byte1;
+            this.startOfData = headerLength + 4;
+            System.out.println("   Header Length: " + headerLength);
         } else {
             // invalid file, throw exception
             throw new IOException("Not a MindWare File!");
         }
         
         // get the header information from stream (less the first eight bytes)
-        byte[] header = new byte[this.headerLength - 8];
-        this.source.read(header, 0, this.headerLength - 8);
+        byte[] header = new byte[headerLength - 8];
+        this.source.read(header, 0, headerLength - 8);
         bb = ByteBuffer.wrap(header);
         
         // length of raw channel list
@@ -187,8 +192,41 @@ public class BinaryIO implements FileIO {
      */
     public void read(ITrace2D channel, int id, int start, int length,
             int frequency) throws IOException {
-        // TODO Auto-generated method stub
+        
+        ByteBuffer bb;
+        
+        double point;
+        
+        // move the file position to the end of the header
+        this.source.getChannel().position(this.startOfData + start * this.channels.size());
+        
+        byte[] data = new byte[2];
+        
+        // for each row
+        for(int i = 0; i < length / frequency; i++){
+            
+            // average data together (rolling average)
+            point = 0;
+            for (int n = 0; n < frequency; n++){
+                // skip data for channels before the one we want
+                this.source.skipBytes(BinaryIO.dataSize * id);
+                
+                // get the value
+                this.source.read(data, 0, BinaryIO.dataSize);
+                bb = ByteBuffer.wrap(data);
+                
+                point = (bb.getShort() + n * point) / (n + 1);
+                //if (n == 0) { point = bb.getShort(); }
 
+                // skip data for channels after the one we want
+                this.source.skipBytes(BinaryIO.dataSize * (this.channels.size() - (id + 1)));
+            }
+            
+            point = point * 0.000305;
+            
+            channel.addPoint(i, point);
+            
+        }
     }
 
     /**
