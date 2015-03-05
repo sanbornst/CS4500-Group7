@@ -7,8 +7,6 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.nio.ByteBuffer;
 
-//TODO Migrate prototype code (in progress...)
-
 /**
  * Binary File IO Object
  * 
@@ -76,7 +74,6 @@ public class BinaryIO implements FileIO {
         bb.position(bb.position() + channelNameLength);
         
         // ignore the hardware configuration information as it is unimportant
-        // TODO: See if there's anything useful in here
         bb.position(bb.position() + 4);
         
         // get number of channels
@@ -187,15 +184,20 @@ public class BinaryIO implements FileIO {
      * @param id the id of the channel to read from
      * @param start the position to start reading from
      * @param length how many entries to read
+     * @param freq how many points to average together
      * 
      * @throws IOException
      */
-    public void read(ITrace2D channel, int id, int start, int length,
-            int frequency) throws IOException {
+    public void read(ITrace2D channel, int id, int start, int length, int freq) throws IOException {
         
         ByteBuffer bb;
-        
         double point;
+        double x;
+        
+        System.out.println("   Reading from channel " + id);
+        System.out.println("           Start: " + start + "ms");
+        System.out.println("          Length: " + length + "ms");
+        System.out.println("      Data/Point: " + freq);
         
         // move the file position to the end of the header
         this.source.getChannel().position(this.startOfData + start * this.channels.size());
@@ -203,30 +205,37 @@ public class BinaryIO implements FileIO {
         byte[] data = new byte[2];
         
         // for each row
-        for(int i = 0; i < length / frequency; i++){
+        for(int i = 0; i < length / freq; i++){
             
             // average data together (rolling average)
             point = 0;
-            for (int n = 0; n < frequency; n++){
+            for (int n = 0; n < freq; n++){
                 // skip data for channels before the one we want
                 this.source.skipBytes(BinaryIO.dataSize * id);
                 
-                // get the value
+                // get the value out of the file
                 this.source.read(data, 0, BinaryIO.dataSize);
                 bb = ByteBuffer.wrap(data);
                 
+                // update average
                 point = (bb.getShort() + n * point) / (n + 1);
-                //if (n == 0) { point = bb.getShort(); }
 
                 // skip data for channels after the one we want
                 this.source.skipBytes(BinaryIO.dataSize * (this.channels.size() - (id + 1)));
             }
             
+            // adjust point by channel scale
+            // TODO: Don't hard-code this... use channel specific scale
             point = point * 0.000305;
             
-            channel.addPoint(i, point);
+            // adjust x value to account for averaging (if any)
+            x = i - (freq - 1) / 2;
             
+            // add point to trace
+            channel.addPoint(x, point);
         }
+        
+        System.out.println("   Done reading data...");
     }
 
     /**
