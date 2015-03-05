@@ -110,6 +110,7 @@ public class BinaryIO implements FileIO {
         String name = null;
         byte[] bName = null;
         int nameLength = -1;
+        double scale = -1;
         
         // Get the channel name length
         nameLength = bb.getInt();
@@ -134,10 +135,11 @@ public class BinaryIO implements FileIO {
         bb.getFloat(); // gain
         bb.getShort(); // coupling
         bb.getShort(); // hardware config
-        bb.getFloat(); // scale multiplier
+        scale = bb.getFloat(); // scale multiplier
         bb.getFloat(); // scale offset
         
         System.out.println("      Channel Name: \"" + name + "\"");
+        System.out.println("             Scale: " + scale);
         
         // add Channel to list
         this.channels.add(new ChannelInfo(id, ChannelType.BINARY, name));

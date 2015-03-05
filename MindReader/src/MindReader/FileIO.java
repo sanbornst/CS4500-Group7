@@ -36,12 +36,11 @@ public interface FileIO {
      * @param id The channel ID to read (unique to that file)
      * @param start the time (in ms from 0) to start reading from
      * @param length the length of time (in ms) to read until
-     * @param frequency the minimum distance between entries (in ms)
+     * @param freq the minimum distance between entries (in ms)
      * 
      * @throws IOException
      */
-    public void read(ITrace2D channel, int id, int start, int length,
-            int frequency) throws IOException;
+    public void read(ITrace2D channel, int id, int start, int length, int freq) throws IOException;
 
     /**
      * Gets channel information from the file
