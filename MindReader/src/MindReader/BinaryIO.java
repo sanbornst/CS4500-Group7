@@ -18,15 +18,18 @@ import java.nio.ByteBuffer;
 public class BinaryIO implements FileIO {
     private RandomAccessFile source;          // input file stream
     private int startOfData;                  // length of the header
+    private long dataLength;                  // the size of the data segment
     private float scanRate;                   // sample rate of file
     private ArrayList<ChannelInfo> channels;  // arrayList for channel info
     
     // CONSTANTS
+    // The size of each data point in bytes
     private static final int dataSize = 2;
     
     BinaryIO(){
         this.source = null;
         this.startOfData = -1;
+        this.dataLength = -1;
         this.scanRate = -1;
         this.channels = new ArrayList<ChannelInfo>();
     }
@@ -57,6 +60,7 @@ public class BinaryIO implements FileIO {
             headerLength = byte1;
             this.startOfData = headerLength + 4;
             System.out.println("   Header Length: " + headerLength);
+
         } else {
             // invalid file, throw exception
             throw new IOException("Not a MindWare File!");
@@ -79,7 +83,12 @@ public class BinaryIO implements FileIO {
         // get number of channels
         int numChannels = bb.getInt();
         
-        System.out.println("   Number of channels: " + numChannels);
+        System.out.println("   # of channels: " + numChannels);
+        
+        // we now have enough information to figure out how big (in ms)
+        // the data segment is, so do it.
+        this.dataLength = (this.source.getChannel().size() - headerLength) / (numChannels * BinaryIO.dataSize);
+        System.out.println("     Data Length: " + this.dataLength + "ms");
 
         int channelLength = 0;
         
@@ -163,7 +172,6 @@ public class BinaryIO implements FileIO {
         // attempt to get a file handle
         this.source = new RandomAccessFile(path, "r");
         
-        
         // verify and read the header
         readHeader();
     }
@@ -190,7 +198,7 @@ public class BinaryIO implements FileIO {
      * 
      * @throws IOException
      */
-    public void read(ITrace2D channel, int id, int start, int length, int freq) throws IOException {
+    public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException {
         
         ByteBuffer bb;
         double point;
@@ -198,7 +206,7 @@ public class BinaryIO implements FileIO {
         
         System.out.println("   Reading from channel " + id);
         System.out.println("           Start: " + start + "ms");
-        System.out.println("          Length: " + length + "ms");
+        System.out.println("             End: " + end + "ms");
         System.out.println("      Data/Point: " + freq);
         
         // move the file position to the end of the header
@@ -207,7 +215,7 @@ public class BinaryIO implements FileIO {
         byte[] data = new byte[2];
         
         // for each row
-        for(int i = 0; i < length / freq; i++){
+        for(int i = 0; i < end / freq; i++){
             
             // average data together (rolling average)
             point = 0;
@@ -264,4 +272,9 @@ public class BinaryIO implements FileIO {
         return this.scanRate;
     }
 
+    public long getEndTime() throws IOException {
+        if (this.dataLength == -1){ throw new IOException("Open file first!"); }
+        
+        return this.dataLength;
+    }
 }

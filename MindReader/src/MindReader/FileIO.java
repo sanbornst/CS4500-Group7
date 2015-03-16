@@ -35,12 +35,12 @@ public interface FileIO {
      * @param channel The jchart2d trace to put data in
      * @param id The channel ID to read (unique to that file)
      * @param start the time (in ms from 0) to start reading from
-     * @param length the length of time (in ms) to read until
+     * @param end the time (in ms) to stop reading at
      * @param freq the minimum distance between entries (in ms)
      * 
      * @throws IOException
      */
-    public void read(ITrace2D channel, int id, int start, int length, int freq) throws IOException;
+    public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException;
 
     /**
      * Gets channel information from the file
@@ -48,4 +48,11 @@ public interface FileIO {
      * @return arrayList containing channelInfo
      */
     public ArrayList<ChannelInfo> getChannels() throws IOException;
+    
+    /**
+     * Gets the end time of the file
+     * 
+     * @return the time (in ms) of the last entry in the file
+     */
+    public long getEndTime() throws IOException;
 }
