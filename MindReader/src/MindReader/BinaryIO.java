@@ -24,8 +24,10 @@ public class BinaryIO implements FileIO {
     
     // CONSTANTS
     // The size of each data point in bytes
-    private static final int dataSize = 2;
+    private static final int intSize = 4;  // the size of an int in the file
+    private static final int dataSize = 2; // the size of each data point (short)
     
+    // Constructor
     BinaryIO(){
         this.source = null;
         this.startOfData = -1;
@@ -40,57 +42,63 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     private void readHeader() throws IOException{
-        byte[] firstBytes = new byte[8];
+        // to hold first two bytes of the file
+        byte[] firstBytes = new byte[BinaryIO.intSize * 2];
+        int byte1 = 0; int byte2 = 0;
+        // byte buffer to hold raw binary data
         ByteBuffer bb;
+        // hold various pieces of file/channel info
         int headerLength = 0;
+        int numChannels = 0;
+        int channelLength = 0;
+        int channelNameLength = 0;
         
         System.out.println("Reading Header...");
         
         // read the first eight bytes from file and store in a ByteBuffer
-        this.source.read(firstBytes, 0, 8);
+        this.source.read(firstBytes, 0, BinaryIO.intSize * 2);
         bb = ByteBuffer.wrap(firstBytes);
         
         // pull two ints out of the byte buffer (8 bytes)
-        int byte1 = bb.getInt();
-        int byte2 = bb.getInt();
+        byte1 = bb.getInt(); byte2 = bb.getInt();
         
         // verify file is a MindWare file (byte2 = byte1 - 4)
-        if (byte2 == byte1 - 4){
+        if (byte2 == byte1 - BinaryIO.intSize){
             // valid file, store header length and continue
             headerLength = byte1;
-            this.startOfData = headerLength + 4;
+            
+            // now have enough info to figure out where data segment starts
+            // so set that now
+            this.startOfData = headerLength + BinaryIO.intSize;
+            
             System.out.println("   Header Length: " + headerLength + " bytes");
-
         } else {
             // invalid file, throw exception
             throw new IOException("Not a MindWare File!");
         }
         
         // get the header information from stream (less the first eight bytes)
-        byte[] header = new byte[headerLength - 8];
-        this.source.read(header, 0, headerLength - 8);
+        byte[] header = new byte[headerLength - BinaryIO.intSize * 2];
+        this.source.read(header, 0, headerLength - BinaryIO.intSize * 2);
         bb = ByteBuffer.wrap(header);
         
-        // length of raw channel list
-        int channelNameLength = bb.getInt();
+        // get the length of raw channel list
+        channelNameLength = bb.getInt();
         
         // ignore the raw channel list (information is located later)
         bb.position(bb.position() + channelNameLength);
         
         // ignore the hardware configuration information as it is unimportant
-        bb.position(bb.position() + 4);
+        bb.position(bb.position() + BinaryIO.intSize);
         
         // get number of channels
-        int numChannels = bb.getInt();
+        numChannels = bb.getInt();
         
         System.out.println("   # of channels: " + numChannels);
         
-        // we now have enough information to figure out how big (in ms)
-        // the data segment is, so do it.
+        // we now have enough information to figure out how big the data segment is, so do it.
         this.dataLength = (this.source.getChannel().size() - headerLength) / (numChannels * BinaryIO.dataSize);
-        System.out.println("     Data Length: " + this.dataLength + "ms");
-
-        int channelLength = 0;
+        System.out.println("     Data Length: " + this.dataLength + " points/channel");
         
         // get all the channel information
         for (int i = 0; i < numChannels; i++){
@@ -103,6 +111,7 @@ public class BinaryIO implements FileIO {
         
         // get the scan rate for the file
         this.scanRate = bb.getFloat();
+        
         System.out.println("   Scan rate: " + this.scanRate + " points/second");
     }
     
@@ -133,7 +142,7 @@ public class BinaryIO implements FileIO {
         try{
             name = new String(bName, "US-ASCII").trim();
         } catch (Exception e) {
-            System.out.println("Unable to convert channel name to string!");
+            System.out.println("Unable to convert channel name to string.");
         }
         
         // Pull the rest of the channel data
@@ -146,6 +155,7 @@ public class BinaryIO implements FileIO {
         bb.getShort();          // hardware config
         scale = bb.getFloat();  // scale multiplier
         offset = bb.getFloat(); // scale offset
+        // Total Size of this segment = 30 bytes
         
         System.out.println("      Channel Name: \"" + name + "\"");
         System.out.println("             Scale: " + scale);
@@ -168,7 +178,7 @@ public class BinaryIO implements FileIO {
      */
     public void open(String path) throws IOException {
         // ensure file isn't already open
-        if (this.source != null){ throw new IOException("File already open!"); }
+        if (this.source != null){ throw new IOException("File already open."); }
         
         // attempt to get a file handle
         this.source = new RandomAccessFile(path, "r");
@@ -183,8 +193,9 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public void close() throws IOException {
-        if (this.source == null){ throw new IOException("Open file first!"); }
+        if (this.source == null){ throw new IOException("No file to close."); }
         
+        // close the file handle
         this.source.close();
     }
 
@@ -209,23 +220,27 @@ public class BinaryIO implements FileIO {
         // if frequency is less than 1, assume 1
         if (freq < 1){ freq = 1;}
         
+        // Dump data from channel being read
         System.out.println("   Reading from channel " + id);
         System.out.println("           Start: " + start + "ms");
         System.out.println("             End: " + end + "ms");
         System.out.println("      Data/Point: " + freq);
         
-        // move the file position to the end of the header
+        // move the file position to the start of the data segment
         long startByte = this.startOfData + start * this.channels.size() * BinaryIO.dataSize;
         this.source.getChannel().position(startByte);
         
+        // create a byte[] to hold a single data point
         byte[] data = new byte[BinaryIO.dataSize];
         
         // for each chunk of data to average together
         for(long i = 0 ; i < (end - start) / freq; i++){
-            
             // average data together (rolling average)
+            
+            // start with a new point value
             point = 0;
-            // for each point in that chunk
+            
+            // for each point in the current chunk
             for (int n = 0; n < freq; n++){
                 // skip data for channels before the one we want
                 this.source.skipBytes(BinaryIO.dataSize * id);
@@ -260,10 +275,12 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public ArrayList<ChannelInfo> getChannels() throws IOException {
-        if (this.source == null){ throw new IOException("Open file first!"); }
+        if (this.source == null){ throw new IOException("No channel data. Open file first."); }
         
         ArrayList<ChannelInfo> results = new ArrayList<ChannelInfo>();
         
+        // loop through extended channel information and reduce to
+        // normal ChannelInfo instances
         for (ExtendedChannelInfo e : this.channels){
             results.add(e.toChannelInfo());
         }
