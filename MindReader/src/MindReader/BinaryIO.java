@@ -28,7 +28,7 @@ public class BinaryIO implements FileIO {
     private static final int dataSize = 2; // the size of each data point (short)
     
     // Constructor
-    BinaryIO(){
+    public BinaryIO(){
         this.source = null;
         this.startOfData = -1;
         this.dataLength = -1;
@@ -264,7 +264,7 @@ public class BinaryIO implements FileIO {
             
             // adjust x value to account for averaging (if any)
             // (initial start point) + (last point in chunk) - (half the size of chunk)
-            x = start + i - (freq - 1) / 2;
+            x = start + i * freq - (freq - 1) / 2;
             
             // add point to trace
             trace.addPoint(x, point);
