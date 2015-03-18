@@ -211,14 +211,17 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public void read(ITrace2D trace, int id, long start, long end, int freq) throws IOException {
-        //TODO: Adjust for scan rates that aren't 1000
         ByteBuffer bb;
         double point;
         double x;
         ExtendedChannelInfo channel = this.channels.get(id);
         
+        // convert start/end/range to # points instead of ms
+        long startPoint = (long) Math.floor(start / this.scanRate * 1000);
+          long endPoint = (long) Math.floor(end / this.scanRate * 1000);
+        
         // if frequency is less than 1, assume 1
-        if (freq < 1){ freq = 1;}
+        if (freq < 1){ freq = 1; }
         
         // Dump data from channel being read
         System.out.println("   Reading from channel " + id);
@@ -234,7 +237,7 @@ public class BinaryIO implements FileIO {
         byte[] data = new byte[BinaryIO.dataSize];
         
         // for each chunk of data to average together
-        for(long i = 0 ; i < (end - start) / freq; i++){
+        for(long i = 0 ; i < (endPoint - startPoint) / freq; i++){
             // average data together (rolling average)
             
             // start with a new point value
@@ -260,6 +263,7 @@ public class BinaryIO implements FileIO {
             point = point * channel.getScale() + channel.getOffset();
             
             // adjust x value to account for averaging (if any)
+            // (initial start point) + (last point in chunk) - (half the size of chunk)
             x = start + i - (freq - 1) / 2;
             
             // add point to trace
