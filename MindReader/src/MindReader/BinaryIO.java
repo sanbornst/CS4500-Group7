@@ -16,11 +16,11 @@ import java.nio.ByteBuffer;
  * @author Christopher Curreri
  */
 public class BinaryIO implements FileIO {
-    private RandomAccessFile source;          // input file stream
-    private int startOfData;                  // length of the header
-    private long dataLength;                  // the size of the data segment
-    private float scanRate;                   // sample rate of file
-    private ArrayList<ChannelInfo> channels;  // arrayList for channel info
+    private RandomAccessFile source;                  // input file stream
+    private int startOfData;                          // length of the header
+    private long dataLength;                          // the size of the data segment
+    private float scanRate;                           // sample rate of file
+    private ArrayList<ExtendedChannelInfo> channels;  // arrayList for channel info
     
     // CONSTANTS
     // The size of each data point in bytes
@@ -31,7 +31,7 @@ public class BinaryIO implements FileIO {
         this.startOfData = -1;
         this.dataLength = -1;
         this.scanRate = -1;
-        this.channels = new ArrayList<ChannelInfo>();
+        this.channels = new ArrayList<ExtendedChannelInfo>();
     }
     
     /**
@@ -59,7 +59,7 @@ public class BinaryIO implements FileIO {
             // valid file, store header length and continue
             headerLength = byte1;
             this.startOfData = headerLength + 4;
-            System.out.println("   Header Length: " + headerLength);
+            System.out.println("   Header Length: " + headerLength + " bytes");
 
         } else {
             // invalid file, throw exception
@@ -103,7 +103,7 @@ public class BinaryIO implements FileIO {
         
         // get the scan rate for the file
         this.scanRate = bb.getFloat();
-        System.out.println("   Scan rate: " + this.scanRate);
+        System.out.println("   Scan rate: " + this.scanRate + " points/second");
     }
     
     /**
@@ -119,7 +119,8 @@ public class BinaryIO implements FileIO {
         String name = null;
         byte[] bName = null;
         int nameLength = -1;
-        double scale = -1;
+        float scale = -1;
+        float offset = 0;
         
         // Get the channel name length
         nameLength = bb.getInt();
@@ -132,26 +133,26 @@ public class BinaryIO implements FileIO {
         try{
             name = new String(bName, "US-ASCII").trim();
         } catch (Exception e) {
-            // TODO: Meaningful error here
+            System.out.println("Unable to convert channel name to string!");
         }
         
         // Pull the rest of the channel data
-        // TODO: Put useful channel data into ChannelInfo class
-        bb.getFloat(); // upper limit
-        bb.getFloat(); // lower limit
-        bb.getFloat(); // range
-        bb.getShort(); // polarity
-        bb.getFloat(); // gain
-        bb.getShort(); // coupling
-        bb.getShort(); // hardware config
-        scale = bb.getFloat(); // scale multiplier
-        bb.getFloat(); // scale offset
+        bb.getFloat();          // upper limit
+        bb.getFloat();          // lower limit
+        bb.getFloat();          // range
+        bb.getShort();          // polarity
+        bb.getFloat();          // gain
+        bb.getShort();          // coupling
+        bb.getShort();          // hardware config
+        scale = bb.getFloat();  // scale multiplier
+        offset = bb.getFloat(); // scale offset
         
         System.out.println("      Channel Name: \"" + name + "\"");
         System.out.println("             Scale: " + scale);
+        System.out.println("            Offset: " + offset);
         
         // add Channel to list
-        this.channels.add(new ChannelInfo(id, ChannelType.BINARY, name));
+        this.channels.add(new ExtendedChannelInfo(id, ChannelType.BINARY, name, scale, offset));
         
         // length bytes + name bytes + rest bytes
         return 4 + nameLength + 30;
@@ -198,11 +199,15 @@ public class BinaryIO implements FileIO {
      * 
      * @throws IOException
      */
-    public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException {
-        
+    public void read(ITrace2D trace, int id, long start, long end, int freq) throws IOException {
+        //TODO: Adjust for scan rates that aren't 1000
         ByteBuffer bb;
         double point;
         double x;
+        ExtendedChannelInfo channel = this.channels.get(id);
+        
+        // if frequency is less than 1, assume 1
+        if (freq < 1){ freq = 1;}
         
         System.out.println("   Reading from channel " + id);
         System.out.println("           Start: " + start + "ms");
@@ -210,15 +215,17 @@ public class BinaryIO implements FileIO {
         System.out.println("      Data/Point: " + freq);
         
         // move the file position to the end of the header
-        this.source.getChannel().position(this.startOfData + start * this.channels.size());
+        long startByte = this.startOfData + start * this.channels.size() * BinaryIO.dataSize;
+        this.source.getChannel().position(startByte);
         
-        byte[] data = new byte[2];
+        byte[] data = new byte[BinaryIO.dataSize];
         
-        // for each row
-        for(int i = 0; i < end / freq; i++){
+        // for each chunk of data to average together
+        for(long i = 0 ; i < (end - start) / freq; i++){
             
             // average data together (rolling average)
             point = 0;
+            // for each point in that chunk
             for (int n = 0; n < freq; n++){
                 // skip data for channels before the one we want
                 this.source.skipBytes(BinaryIO.dataSize * id);
@@ -234,15 +241,14 @@ public class BinaryIO implements FileIO {
                 this.source.skipBytes(BinaryIO.dataSize * (this.channels.size() - (id + 1)));
             }
             
-            // adjust point by channel scale
-            // TODO: Don't hard-code this... use channel specific scale
-            point = point * 0.000305;
+            // adjust point by channel scale and offset
+            point = point * channel.getScale() + channel.getOffset();
             
             // adjust x value to account for averaging (if any)
-            x = i - (freq - 1) / 2;
+            x = start + i - (freq - 1) / 2;
             
             // add point to trace
-            channel.addPoint(x, point);
+            trace.addPoint(x, point);
         }
         
         System.out.println("   Done reading data...");
@@ -251,12 +257,18 @@ public class BinaryIO implements FileIO {
     /**
      * gets all of the channel information
      * 
-     * @throws IOEXception
+     * @throws IOException
      */
     public ArrayList<ChannelInfo> getChannels() throws IOException {
         if (this.source == null){ throw new IOException("Open file first!"); }
         
-        return this.channels;
+        ArrayList<ChannelInfo> results = new ArrayList<ChannelInfo>();
+        
+        for (ExtendedChannelInfo e : this.channels){
+            results.add(e.toChannelInfo());
+        }
+        
+        return results;
     }
     
     /**
@@ -276,5 +288,25 @@ public class BinaryIO implements FileIO {
         if (this.dataLength == -1){ throw new IOException("Open file first!"); }
         
         return this.dataLength;
+    }
+    
+    
+    // private extension to ChannelInfo to store extra channel information
+    private class ExtendedChannelInfo extends ChannelInfo{
+        private float scale;
+        private float offset;
+        
+        ExtendedChannelInfo(int id, ChannelType type, String name, float scale, float offset){
+            super(id, type, name);
+            this.scale = scale;
+            this.offset = offset;
+        }
+        
+        float getScale(){ return this.scale; }
+        float getOffset(){ return this.offset; }
+        
+        ChannelInfo toChannelInfo(){
+            return new ChannelInfo(this.getId(), this.getType(), this.getName());
+        }
     }
 }

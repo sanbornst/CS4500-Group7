@@ -36,7 +36,7 @@ public interface FileIO {
      * @param id The channel ID to read (unique to that file)
      * @param start the time (in ms from 0) to start reading from
      * @param end the time (in ms) to stop reading at
-     * @param freq the minimum distance between entries (in ms)
+     * @param freq the number of consecutive data points to group together
      * 
      * @throws IOException
      */
