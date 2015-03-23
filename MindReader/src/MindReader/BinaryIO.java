@@ -24,7 +24,7 @@ public class BinaryIO implements FileIO {
     
     // CONSTANTS
     // The size of each data point in bytes
-    private static final int intSize = 4;  // the size of an int in the file
+    private static final int intSize = 4;  // 
     private static final int dataSize = 2; // the size of each data point (short)
     
     // Constructor
@@ -113,6 +113,7 @@ public class BinaryIO implements FileIO {
         this.scanRate = bb.getFloat();
         
         System.out.println("   Scan rate: " + this.scanRate + " points/second");
+        System.out.println();
     }
     
     /**
@@ -217,9 +218,7 @@ public class BinaryIO implements FileIO {
         double x;
         ExtendedChannelInfo channel = this.channels.get(id);
         
-        // account for file time offset, if present
-        start = start - channel.getOffset();
-        end = start - channel.getOffset();
+        int size = this.channels.size();
         
         // convert start/end to # points instead of ms
         // ms / 1000 = seconds, seconds * scanRate = # of points
@@ -262,21 +261,22 @@ public class BinaryIO implements FileIO {
                 point = (bb.getShort() + n * point) / (n + 1);
 
                 // skip data for channels after the one we want
-                this.source.skipBytes(BinaryIO.dataSize * (this.channels.size() - (id + 1)));
+                this.source.skipBytes(BinaryIO.dataSize * (size - (id + 1)));
             }
             
             // adjust point by channel scale and offset
             point = point * channel.getScale() + channel.getOffset();
             
             // adjust x value to account for averaging (if any)
-            // (offset) + (initial start point) + (last point in chunk) - (half the size of chunk)
-            x = channel.getOffset() + start + i * freq - (freq - 1) / 2;
+            // (initial start point) + (last point in chunk) - (half the size of chunk)
+            x = start + (i * freq) - (freq - 1) / 2;
             
             // add point to trace
             trace.addPoint(x, point);
         }
         
         System.out.println("   Done reading data...");
+        System.out.println();
     }
 
     /**
@@ -334,9 +334,9 @@ public class BinaryIO implements FileIO {
      */
     private class ExtendedChannelInfo extends ChannelInfo{
         private float scale;
-        private long offset;
+        private float offset;
         
-        ExtendedChannelInfo(int id, ChannelType type, String name, float scale, long offset){
+        ExtendedChannelInfo(int id, ChannelType type, String name, float scale, float offset){
             super(id, type, name);
             this.scale = scale;
             this.offset = offset;
@@ -350,11 +350,11 @@ public class BinaryIO implements FileIO {
         float getScale(){ return this.scale; }
         
         /**
-         * gets the offset of this channel
+         * gets the scale offset of this channel
          * 
-         * @return the offset (in ms) for the channel
+         * @return the offset for the channel
          */
-        long getOffset(){ return this.offset; }
+        float getOffset(){ return this.offset; }
         
         /**
          * Converts this ExtendedChannelInfo object into a regular ChannelInfo object
