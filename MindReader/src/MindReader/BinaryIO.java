@@ -162,7 +162,8 @@ public class BinaryIO implements FileIO {
         System.out.println("            Offset: " + offset);
         
         // add Channel to list
-        this.channels.add(new ExtendedChannelInfo(id, ChannelType.BINARY, name, scale, offset));
+        this.channels.add(new ExtendedChannelInfo(id, ChannelType.BINARY, name,
+                          scale, (long) Math.floor(offset * 1000)));
         
         // length bytes + name bytes + rest bytes
         return 4 + nameLength + 30;
@@ -206,7 +207,7 @@ public class BinaryIO implements FileIO {
      * @param id the id of the channel to read from
      * @param start the position to start reading from
      * @param length how many entries to read
-     * @param freq how many points to average together
+     * @param freq how many points to average together (min of 1)
      * 
      * @throws IOException
      */
@@ -216,9 +217,14 @@ public class BinaryIO implements FileIO {
         double x;
         ExtendedChannelInfo channel = this.channels.get(id);
         
-        // convert start/end/range to # points instead of ms
-        long startPoint = (long) Math.floor(start / this.scanRate * 1000);
-          long endPoint = (long) Math.floor(end / this.scanRate * 1000);
+        // account for file time offset, if present
+        start = start - channel.getOffset();
+        end = start - channel.getOffset();
+        
+        // convert start/end to # points instead of ms
+        // ms / 1000 = seconds, seconds * scanRate = # of points
+        long startPoint = (long) Math.floor(start / 1000 * this.scanRate);
+        long endPoint = (long) Math.floor(end / 1000 * this.scanRate);
         
         // if frequency is less than 1, assume 1
         if (freq < 1){ freq = 1; }
@@ -263,8 +269,8 @@ public class BinaryIO implements FileIO {
             point = point * channel.getScale() + channel.getOffset();
             
             // adjust x value to account for averaging (if any)
-            // (initial start point) + (last point in chunk) - (half the size of chunk)
-            x = start + i * freq - (freq - 1) / 2;
+            // (offset) + (initial start point) + (last point in chunk) - (half the size of chunk)
+            x = channel.getOffset() + start + i * freq - (freq - 1) / 2;
             
             // add point to trace
             trace.addPoint(x, point);
@@ -304,28 +310,57 @@ public class BinaryIO implements FileIO {
         
         return this.scanRate;
     }
-
+    
+    /**
+     * gets the end time of the file
+     * 
+     * @return the time (in ms) of the last entry in the file
+     * 
+     * @throws IOException
+     */
     public long getEndTime() throws IOException {
         if (this.dataLength == -1){ throw new IOException("Open file first!"); }
         
-        return this.dataLength;
+        // points / scanRate = seconds, seconds * 1000 = ms
+        return (long) Math.floor(this.dataLength / this.scanRate * 1000);
     }
     
-    
-    // private extension to ChannelInfo to store extra channel information
+    /**
+     * Extended ChannelInfo Object
+     * 
+     * private extension to ChannelInfo to store extra channel information
+     * 
+     * @author Christopher Curreri
+     */
     private class ExtendedChannelInfo extends ChannelInfo{
         private float scale;
-        private float offset;
+        private long offset;
         
-        ExtendedChannelInfo(int id, ChannelType type, String name, float scale, float offset){
+        ExtendedChannelInfo(int id, ChannelType type, String name, float scale, long offset){
             super(id, type, name);
             this.scale = scale;
             this.offset = offset;
         }
         
+        /**
+         * gets the scale multiplier for this channel
+         * 
+         * @return the scale multiplier
+         */
         float getScale(){ return this.scale; }
-        float getOffset(){ return this.offset; }
         
+        /**
+         * gets the offset of this channel
+         * 
+         * @return the offset (in ms) for the channel
+         */
+        long getOffset(){ return this.offset; }
+        
+        /**
+         * Converts this ExtendedChannelInfo object into a regular ChannelInfo object
+         * 
+         * @return the ChannelInfo version of this object
+         */
         ChannelInfo toChannelInfo(){
             return new ChannelInfo(this.getId(), this.getType(), this.getName());
         }
