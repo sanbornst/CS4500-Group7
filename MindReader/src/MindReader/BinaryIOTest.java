@@ -21,13 +21,13 @@ import javax.swing.JFrame;
 
 public class BinaryIOTest {
     // Path to pull data from 
-    private static String path = "/path/to/test/data/PA_1.mw";
+    private static String path = "/path/to/data/PA_1.mw";
     // start time (in ms)
     private static long start = 0;
     // end time (in ms)
     private static long end = 297000;
     // number of points to display per channel
-    private static int pointsPerChannel = 25000;
+    private static int pointsPerChannel = 297000;
     // math to set frequency to the correct value (assuming 1000 points / s)
     private static int freq = (int) (end - start) / pointsPerChannel;
     
@@ -40,7 +40,7 @@ public class BinaryIOTest {
     // Image Settings
     private static boolean toImage = true;
     private static String output = "/path/to/output/test.bmp";
-    private static int width = 1920;
+    private static int width = 29700;
     private static int height = 1080;
     
     
