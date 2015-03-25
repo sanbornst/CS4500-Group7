@@ -215,15 +215,15 @@ public class BinaryIO implements FileIO {
     public void read(ITrace2D trace, int id, long start, long end, int freq) throws IOException {
         ByteBuffer bb;
         double point;
-        double x;
+        long x;
         ExtendedChannelInfo channel = this.channels.get(id);
         
         int size = this.channels.size();
         
         // convert start/end to # points instead of ms
         // ms / 1000 = seconds, seconds * scanRate = # of points
-        long startPoint = (long) Math.floor(start / 1000 * this.scanRate);
-        long endPoint = (long) Math.floor(end / 1000 * this.scanRate);
+        long startPoint = this.msToPoints(start);
+        long endPoint = this.msToPoints(end);
         
         // if frequency is less than 1, assume 1
         if (freq < 1){ freq = 1; }
@@ -269,7 +269,10 @@ public class BinaryIO implements FileIO {
             
             // adjust x value to account for averaging (if any)
             // (initial start point) + (last point in chunk) - (half the size of chunk)
-            x = start + (i * freq) - (freq - 1) / 2;
+            x = startPoint + (i * freq) - (freq - 1) / 2;
+            
+            // convert x from points back to ms
+            x = this.pointsToMs(x);
             
             // add point to trace
             trace.addPoint(x, point);
@@ -306,7 +309,7 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public float getScanRate() throws IOException {
-        if (this.source == null){ throw new IOException("Open file first!"); }
+        if (this.source == null){ throw new IOException("No scan rate. Open file first."); }
         
         return this.scanRate;
     }
@@ -319,10 +322,42 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public long getEndTime() throws IOException {
-        if (this.dataLength == -1){ throw new IOException("Open file first!"); }
+        if (this.dataLength == -1){ throw new IOException("No data information. Open file first."); }
         
         // points / scanRate = seconds, seconds * 1000 = ms
         return (long) Math.floor(this.dataLength / this.scanRate * 1000);
+    }
+    
+    /**
+     * converts from ms time to # of points
+     * 
+     * @param time the time to convert (in ms)
+     * 
+     * @return the number of points up to that time
+     * 
+     * @throws IOException
+     */
+    public long msToPoints(long time) throws IOException {
+        if (this.scanRate == -1){ throw new IOException("No scan rate. Open file first."); }
+        
+        // time / 1000 = time in seconds, time-in-seconds * scanRate = # of points
+        return (long) Math.floor(time / 1000 * this.scanRate);
+    }
+    
+    /**
+     * converts from # of points to ms time
+     * 
+     * @param points the number of points
+     * 
+     * @return the time to that point (in ms)
+     * 
+     * @throws IOException
+     */
+    public long pointsToMs(long points) throws IOException {
+        if (this.scanRate == -1){ throw new IOException("No scan rate. Open file first."); }
+        
+        // points / scanRate = points / second, points/second * 1000 = points/ms
+        return (long) Math.floor(points / this.scanRate * 1000);
     }
     
     /**
