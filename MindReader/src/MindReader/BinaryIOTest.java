@@ -21,7 +21,7 @@ import javax.swing.JFrame;
 
 public class BinaryIOTest {
     // Path to pull data from 
-    private static String path = "/Users/fox/Desktop/data/smaller/PA_1.mw";
+    private static String path = "/path/to/test/data/PA_1.mw";
     // start time (in ms)
     private static long start = 0;
     // end time (in ms)
@@ -39,7 +39,7 @@ public class BinaryIOTest {
 
     // Image Settings
     private static boolean toImage = true;
-    private static String output = "/Users/fox/Desktop/test.bmp";
+    private static String output = "/path/to/output/test.bmp";
     private static int width = 1920;
     private static int height = 1080;
     
