@@ -24,7 +24,7 @@ public class BinaryIO implements FileIO {
     
     // CONSTANTS
     // The size of each data point in bytes
-    private static final int intSize = 4;  // 
+    private static final int intSize = 4;  // the size of an int in bytes
     private static final int dataSize = 2; // the size of each data point (short)
     
     // Constructor
@@ -34,6 +34,25 @@ public class BinaryIO implements FileIO {
         this.dataLength = -1;
         this.scanRate = -1;
         this.channels = new ArrayList<ExtendedChannelInfo>();
+    }
+    
+    /**
+     * opens the file, verifies that it is a MindWare file, and reads
+     * all of the necessary header information
+     * 
+     * @param path the path to the input file
+     * 
+     * @throws IOException
+     */
+    public void open(String path) throws IOException {
+        // ensure file isn't already open
+        if (this.source != null){ throw new IOException("File already open."); }
+        
+        // attempt to get a file handle
+        this.source = new RandomAccessFile(path, "r");
+        
+        // verify and read the header
+        readHeader();
     }
     
     /**
@@ -146,16 +165,23 @@ public class BinaryIO implements FileIO {
             System.out.println("Unable to convert channel name to string.");
         }
         
-        // Pull the rest of the channel data
-        bb.getFloat();          // upper limit
-        bb.getFloat();          // lower limit
-        bb.getFloat();          // range
-        bb.getShort();          // polarity
-        bb.getFloat();          // gain
-        bb.getShort();          // coupling
-        bb.getShort();          // hardware config
-        scale = bb.getFloat();  // scale multiplier
-        offset = bb.getFloat(); // scale offset
+        // Skip the unused channel data
+        // 4 bytes: upper limit
+        // 4 bytes: lower limit
+        // 4 bytes: range
+        // 2 bytes: polarity
+        // 4 bytes: gain
+        // 2 bytes: coupling
+        // 2 bytes: hardware config
+        // Total: 22 Bytes
+        bb.position(bb.position() + 22);
+        
+        // get the scale multiplier (4 bytes)
+        scale = bb.getFloat();
+        
+        // get the scale offset (4 bytes)
+        offset = bb.getFloat();
+        
         // Total Size of this segment = 30 bytes
         
         System.out.println("      Channel Name: \"" + name + "\"");
@@ -163,42 +189,10 @@ public class BinaryIO implements FileIO {
         System.out.println("            Offset: " + offset);
         
         // add Channel to list
-        this.channels.add(new ExtendedChannelInfo(id, ChannelType.BINARY, name,
-                          scale, (long) Math.floor(offset * 1000)));
+        this.channels.add(new ExtendedChannelInfo(id, ChannelType.BINARY, name, scale, offset));
         
         // length bytes + name bytes + rest bytes
         return 4 + nameLength + 30;
-    }
-    
-    /**
-     * opens the file, verifies that it is a MindWare file, and reads
-     * all of the necessary header information
-     * 
-     * @param path the path to the input file
-     * 
-     * @throws IOException
-     */
-    public void open(String path) throws IOException {
-        // ensure file isn't already open
-        if (this.source != null){ throw new IOException("File already open."); }
-        
-        // attempt to get a file handle
-        this.source = new RandomAccessFile(path, "r");
-        
-        // verify and read the header
-        readHeader();
-    }
-    
-    /**
-     * closes the currently open file
-     * 
-     * @throws IOException
-     */
-    public void close() throws IOException {
-        if (this.source == null){ throw new IOException("No file to close."); }
-        
-        // close the file handle
-        this.source.close();
     }
 
     /**
@@ -221,7 +215,6 @@ public class BinaryIO implements FileIO {
         int size = this.channels.size();
         
         // convert start/end to # points instead of ms
-        // ms / 1000 = seconds, seconds * scanRate = # of points
         long startPoint = this.msToPoints(start);
         long endPoint = this.msToPoints(end);
         
@@ -281,6 +274,18 @@ public class BinaryIO implements FileIO {
         System.out.println("   Done reading data...");
         System.out.println();
     }
+    
+    /**
+     * closes the currently open file
+     * 
+     * @throws IOException
+     */
+    public void close() throws IOException {
+        if (this.source == null){ throw new IOException("No file to close."); }
+        
+        // close the file handle
+        this.source.close();
+    }
 
     /**
      * gets all of the channel information
@@ -309,7 +314,7 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public float getScanRate() throws IOException {
-        if (this.source == null){ throw new IOException("No scan rate. Open file first."); }
+        if (this.scanRate == -1){ throw new IOException("No scan rate. Open file first."); }
         
         return this.scanRate;
     }
