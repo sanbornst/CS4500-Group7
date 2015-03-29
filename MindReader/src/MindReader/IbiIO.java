@@ -7,6 +7,7 @@ import info.monitorenter.gui.chart.TracePoint2D;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.awt.geom.Point2D;
 import java.awt.Point;
 
@@ -119,9 +120,9 @@ class IbiIO implements FileIO {
       cols.add(i, new ArrayList<Integer>());
     }
     // read the columns in the file
-    int count = 0; // temporary troubleshooting loop count
+    //int count = 0; // temporary troubleshooting loop count
     while ((line = source.readNext()) != null) {
-      count++;
+      //count++;
       lineHasData = false; // use to break if the line has no data
       for (int i = 0; i < line.length; i++) {
         if (!line[i].equals("")) {
@@ -189,13 +190,13 @@ class IbiIO implements FileIO {
     return (long) end;
   }
   
-//  public ArrayList<Integer> getDataForTest() {
-//    return data;
-//  }
-//  
-//  public Point2D[] getPointsForTest() {
-//    return points;
-//  }
+  public ArrayList<Integer> getDataForTest() {
+    return data;
+  }
+  
+  public Point2D[] getPointsForTest() {
+    return points;
+  }
 //  
 //  // test function
 //  public static void main(String[] args) throws IOException{
@@ -214,4 +215,18 @@ class IbiIO implements FileIO {
 //    }*/
 //    System.out.println("Finished testing points.");
 //  }
+  
+  public static void main(String[] args) throws IOException {
+    IbiIO testFile = new IbiIO();
+    testFile.open("PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
+    CSVWriter testWrite = new CSVWriter(new FileWriter("testout.txt"));
+    ArrayList<Integer> testData = testFile.getDataForTest();
+    String[] line = new String[1];
+    for (Integer d : testData) {
+      line[0] = d.toString();
+      testWrite.writeNext(line);
+    }
+    testWrite.close();
+    
+  }
 }
