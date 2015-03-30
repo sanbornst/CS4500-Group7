@@ -7,6 +7,7 @@ import info.monitorenter.gui.chart.TracePoint2D;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.awt.geom.Point2D;
 import java.awt.Point;
 
@@ -119,9 +120,9 @@ class IbiIO implements FileIO {
       cols.add(i, new ArrayList<Integer>());
     }
     // read the columns in the file
-    int count = 0; // temporary troubleshooting loop count
+    //int count = 0; // temporary troubleshooting loop count
     while ((line = source.readNext()) != null) {
-      count++;
+      //count++;
       lineHasData = false; // use to break if the line has no data
       for (int i = 0; i < line.length; i++) {
         if (!line[i].equals("")) {
@@ -188,30 +189,4 @@ class IbiIO implements FileIO {
     double end = points[points.length - 1].getX() + endDelay;
     return (long) end;
   }
-  
-//  public ArrayList<Integer> getDataForTest() {
-//    return data;
-//  }
-//  
-//  public Point2D[] getPointsForTest() {
-//    return points;
-//  }
-//  
-//  // test function
-//  public static void main(String[] args) throws IOException{
-//    IbiIO testFile = new IbiIO();
-//    System.out.println("Created instance.");
-//    testFile.open("PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
-//    System.out.println("Opened small test file.");
-//    ArrayList<Integer> contents = testFile.getDataForTest();
-//    /*for (Integer i : contents) {
-//      System.out.println("Data point: " + i);
-//    }*/
-//    System.out.println("Finished testing raw data.");
-//    Point2D[] finishContents = testFile.getPointsForTest();
-//    /*for (int i = 0; i < finishContents.length; i++) {
-//      System.out.println("Point: (" + finishContents[i].getX() + ", " + finishContents[i].getY() + ")");
-//    }*/
-//    System.out.println("Finished testing points.");
-//  }
 }
