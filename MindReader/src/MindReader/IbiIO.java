@@ -189,44 +189,4 @@ class IbiIO implements FileIO {
     double end = points[points.length - 1].getX() + endDelay;
     return (long) end;
   }
-  
-  public ArrayList<Integer> getDataForTest() {
-    return data;
-  }
-  
-  public Point2D[] getPointsForTest() {
-    return points;
-  }
-//  
-//  // test function
-//  public static void main(String[] args) throws IOException{
-//    IbiIO testFile = new IbiIO();
-//    System.out.println("Created instance.");
-//    testFile.open("PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
-//    System.out.println("Opened small test file.");
-//    ArrayList<Integer> contents = testFile.getDataForTest();
-//    /*for (Integer i : contents) {
-//      System.out.println("Data point: " + i);
-//    }*/
-//    System.out.println("Finished testing raw data.");
-//    Point2D[] finishContents = testFile.getPointsForTest();
-//    /*for (int i = 0; i < finishContents.length; i++) {
-//      System.out.println("Point: (" + finishContents[i].getX() + ", " + finishContents[i].getY() + ")");
-//    }*/
-//    System.out.println("Finished testing points.");
-//  }
-  
-  public static void main(String[] args) throws IOException {
-    IbiIO testFile = new IbiIO();
-    testFile.open("PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
-    CSVWriter testWrite = new CSVWriter(new FileWriter("testout.txt"));
-    ArrayList<Integer> testData = testFile.getDataForTest();
-    String[] line = new String[1];
-    for (Integer d : testData) {
-      line[0] = d.toString();
-      testWrite.writeNext(line);
-    }
-    testWrite.close();
-    
-  }
 }
