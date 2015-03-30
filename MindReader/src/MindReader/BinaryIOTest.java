@@ -36,7 +36,6 @@ public class BinaryIOTest {
     private static int lowScale = -5;
     // high end of the scale
     private static int highScale = 5;
-
     // Image Settings
     private static boolean toImage = false;
     private static String output = "/path/to/image/test.bmp";

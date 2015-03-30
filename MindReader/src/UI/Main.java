@@ -1,3 +1,5 @@
+package UI;
+
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
@@ -115,7 +117,7 @@ public class Main {
         // Main panel area
         
         // panel displaying separate view
-        JPanel seperatePanel = new JPanel();
+        final JPanel seperatePanel = new JPanel();
         // insert graphs for separate view here
         seperatePanel.setBounds(248, 46, 536, 612);
         frame.getContentPane().add(seperatePanel);
@@ -127,7 +129,7 @@ public class Main {
         seperatePanel.add(lblThePanelShowing);
         
         // panel displaying collapse view
-        JPanel collapsePanel = new JPanel();
+        final JPanel collapsePanel = new JPanel();
         // insert graphs for collapse view here
         collapsePanel.setBackground(Color.WHITE);
         collapsePanel.setBounds(248, 46, 536, 612);

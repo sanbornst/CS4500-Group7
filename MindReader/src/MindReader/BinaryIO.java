@@ -37,8 +37,8 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * opens the file, verifies that it is a MindWare file, and reads
-     * all of the necessary header information
+     * Opens the file, verifies that it is a MindWare file, and reads
+     * all of the necessary header information.
      * 
      * @param path the path to the input file
      * 
@@ -56,7 +56,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * reads file header information
+     * Reads file header information
      * 
      * @throws IOException
      */
@@ -136,7 +136,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * reads a single channel's worth of information and adds it
+     * Reads a single channel's worth of information and adds it
      * to the list of channels.
      * 
      * @param id the id to set to the channel
@@ -196,7 +196,7 @@ public class BinaryIO implements FileIO {
     }
 
     /**
-     * sequentially reads channel data from the file
+     * Sequentially reads channel data from the file.
      * 
      * @param channel the ITRace2D instance to read data into
      * @param id the id of the channel to read from
@@ -276,7 +276,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * closes the currently open file
+     * Closes the file.
      * 
      * @throws IOException
      */
@@ -285,10 +285,17 @@ public class BinaryIO implements FileIO {
         
         // close the file handle
         this.source.close();
+        
+        // reset the object in case someone tries to re-use it
+        this.source = null;
+        this.startOfData = -1;
+        this.dataLength = -1;
+        this.scanRate = -1;
+        this.channels = new ArrayList<ExtendedChannelInfo>();
     }
 
     /**
-     * gets all of the channel information
+     * Gets all of the channel information.
      * 
      * @throws IOException
      */
