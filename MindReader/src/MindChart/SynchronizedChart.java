@@ -99,8 +99,6 @@ public class SynchronizedChart extends XZoomPanChart {
 	 */
 	private void zoomAllFriends(IAxis<?> axis, double start, double end) {
 		for (SynchronizedChart friend : friends) {
-			// System.out.println("ZOOMING FROM ZOOMFRIEND " + " " +
-			// axis.getTitle() + " " + start + " " + end);
 			friend.zoomSelf(axis, start, end);
 		}
 	}
@@ -149,7 +147,6 @@ public class SynchronizedChart extends XZoomPanChart {
 	 *            the ending point of the zoom
 	 */
 	public void zoomSelf(IAxis<?> axis, double start, double end) {
-		//System.out.println("Friend zoom!");
 		super.zoom(fixAxis(axis), start, end);
 	}
 	

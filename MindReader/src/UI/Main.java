@@ -1,24 +1,38 @@
+package UI;
+
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JSplitPane;
+
 import java.awt.BorderLayout;
+
 import javax.swing.JTabbedPane;
+
 import java.awt.FlowLayout;
 import java.awt.ScrollPane;
+
 import javax.swing.JPanel;
 import javax.swing.JButton;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
 import javax.swing.JScrollPane;
 import javax.swing.JLabel;
 import javax.swing.JList;
+
 import java.awt.Color;
+import java.util.List;
+
 import javax.swing.JTextField;
+
+import MindChart.SynchronizedChart;
 
 
 public class Main {
 
+    private List<SynchronizedChart> charts;
     private JFrame frame;
     private JTextField textField;
     private JTextField zoomPercentage;
@@ -32,8 +46,8 @@ public class Main {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    Main window = new Main();
-                    window.frame.setVisible(true);
+                    BaseUI window = new BaseUI();
+                    window.display();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -47,6 +61,8 @@ public class Main {
     public Main() {
         initialize();
     }
+
+    
 
     /**
      * Initialize the contents of the frame.
@@ -64,42 +80,41 @@ public class Main {
         frame.getContentPane().add(tabbedPane);
         
         // tab of file viewer
-        JPanel file = new JPanel();
-        tabbedPane.addTab("File", null, file, null);
-        file.setLayout(null);
+        JPanel fileViewer = new JPanel();
+        tabbedPane.addTab("File", null, fileViewer, null);
+        fileViewer.setLayout(null);
         
         JLabel lblBinaryFiles = new JLabel("Binary Files");
         lblBinaryFiles.setBounds(10, 11, 64, 14);
-        file.add(lblBinaryFiles);
+        fileViewer.add(lblBinaryFiles);
         
         // Panel for binary file explorer
         JPanel explorerBinary = new JPanel();
         // insert Binary File explorer here
         explorerBinary.setBackground(Color.WHITE);
         explorerBinary.setBounds(10, 28, 211, 174);
-        file.add(explorerBinary);
-        
+        fileViewer.add(explorerBinary);
         JLabel lblIbiFiles = new JLabel("IBI Files");
         lblIbiFiles.setBounds(10, 213, 46, 14);
-        file.add(lblIbiFiles);
+        fileViewer.add(lblIbiFiles);
         
         // Panel for IBI file explorer
         JPanel explorerIBI = new JPanel();
         // insert IBI File explorer here
         explorerIBI.setBackground(Color.WHITE);
         explorerIBI.setBounds(10, 238, 211, 180);
-        file.add(explorerIBI);
+        fileViewer.add(explorerIBI);
         
         JLabel lblEvenFiles = new JLabel("Event Files");
         lblEvenFiles.setBounds(10, 429, 96, 14);
-        file.add(lblEvenFiles);
+        fileViewer.add(lblEvenFiles);
         
         // Panel for event file explorer
         JPanel explorerEvent = new JPanel();
         // insert Event File explorer here
         explorerEvent.setBackground(Color.WHITE);
         explorerEvent.setBounds(10, 454, 211, 180);
-        file.add(explorerEvent);
+        fileViewer.add(explorerEvent);
         
         //tab for Channels viewer
         JPanel channels = new JPanel();
@@ -115,19 +130,19 @@ public class Main {
         // Main panel area
         
         // panel displaying separate view
-        JPanel seperatePanel = new JPanel();
+        final JPanel separatePanel = new JPanel();
         // insert graphs for separate view here
-        seperatePanel.setBounds(248, 46, 536, 612);
-        frame.getContentPane().add(seperatePanel);
-        seperatePanel.setLayout(null);
-        seperatePanel.setBackground(Color.WHITE);
+        separatePanel.setBounds(248, 46, 536, 612);
+        frame.getContentPane().add(separatePanel);
+        separatePanel.setLayout(null);
+        separatePanel.setBackground(Color.WHITE);
         
-        JLabel lblThePanelShowing = new JLabel("the panel showing seperate channels");
+        JLabel lblThePanelShowing = new JLabel("the panel showing separate channels");
         lblThePanelShowing.setBounds(0, 0, 467, 14);
-        seperatePanel.add(lblThePanelShowing);
+        separatePanel.add(lblThePanelShowing);
         
         // panel displaying collapse view
-        JPanel collapsePanel = new JPanel();
+        final JPanel collapsePanel = new JPanel();
         // insert graphs for collapse view here
         collapsePanel.setBackground(Color.WHITE);
         collapsePanel.setBounds(248, 46, 536, 612);
@@ -144,7 +159,7 @@ public class Main {
         btnSeperate.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
                 collapsePanel.setVisible(false);
-                seperatePanel.setVisible(true);
+                separatePanel.setVisible(true);
             }
         });
         frame.getContentPane().add(btnSeperate);
@@ -154,7 +169,7 @@ public class Main {
         btnCollapse.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
                 collapsePanel.setVisible(true);
-                seperatePanel.setVisible(false);
+                separatePanel.setVisible(false);
             }
         });
         btnCollapse.setBounds(690, 13, 94, 23);
