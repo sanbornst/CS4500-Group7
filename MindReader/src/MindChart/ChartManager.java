@@ -102,6 +102,7 @@ public class ChartManager {
         // this looks weird, i know, but bear with me
         for (SynchronizedChart chart : charts) {
             chart.setFriends(charts);
+            chart.setFocusable(true);
         }
 
         return charts;
@@ -122,7 +123,9 @@ public class ChartManager {
     }
 
     public void setPath(String path) throws IOException {
-        bio.close();
+        if (bio.isOpen()) {
+            bio.close();
+        } 
         bio.open(path);
     }
 

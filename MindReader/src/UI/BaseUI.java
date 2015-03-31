@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -29,25 +30,24 @@ import info.monitorenter.gui.chart.views.ChartPanel;
 
 public class BaseUI {
 
+    private final int DEFAULT_FREQ = 11;
     private JButton btnReset;
     private JFrame frame;
-    private JPanel mainPanel;
     private JPanel chartPanel;
     private JTabbedPane sidebar;
-    private JTextField textField;
     private JTextField startPoint;
     private JTextField endPoint;
     private ChartManager cm;
 
     public BaseUI() {
         initializeFrame();
-        cm = new ChartManager("data/PA_1.mw");
-        try {
-            initializeCharts(10);
+        cm = new ChartManager();
+       /* try {
+            initializeCharts(this.DEFAULT_FREQ);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
+        }*/
     }
 
     public void initializeFrame() {
@@ -74,7 +74,7 @@ public class BaseUI {
         mainPanel.add(chartPanel, BorderLayout.CENTER);
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        
+
         /*
          * useless for now // panel displaying collapse view final JPanel
          * collapsePanel = new JPanel();d // insert graphs for collapse view
@@ -136,41 +136,42 @@ public class BaseUI {
                 int start = 0;
                 int end = 0;
                 try {
-                   start = Integer.parseInt(startPoint.getText());
-                   end = Integer.parseInt(endPoint.getText());
+                    start = Integer.parseInt(startPoint.getText());
+                    end = Integer.parseInt(endPoint.getText());
 
                 } catch (NumberFormatException oops) {
-                    JOptionPane.showMessageDialog(null, "Inputted bounds must be numbers!");
+                    JOptionPane.showMessageDialog(null,
+                            "Inputted bounds must be numbers!");
                     return;
                 }
-                
+
                 cm.setRange(start, end);
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 // TODO Auto-generated method stub
-                
+
             }
-            
+
         });
     }
 
@@ -182,40 +183,22 @@ public class BaseUI {
         // tab of file viewer
         JPanel fileViewer = new JPanel();
         sidebar.addTab("File", null, fileViewer, null);
-        fileViewer.setLayout(null);
+        fileViewer.setLayout(new BorderLayout());
 
         JLabel lblBinaryFiles = new JLabel("Binary Files");
         lblBinaryFiles.setBounds(10, 11, 64, 14);
-        fileViewer.add(lblBinaryFiles);
-
-        // Panel for binary file explorer
-        JPanel explorerBinary = new JPanel();
-        // insert Binary File explorer here
-        explorerBinary.setBackground(Color.WHITE);
-        explorerBinary.setBounds(10, 28, 211, 174);
-        fileViewer.add(explorerBinary);
-        JLabel lblIbiFiles = new JLabel("IBI Files");
-        lblIbiFiles.setBounds(10, 213, 46, 14);
-        fileViewer.add(lblIbiFiles);
-
-        // Panel for IBI file explorer
-        JPanel explorerIBI = new JPanel();
-        // insert IBI File explorer here
-        explorerIBI.setBackground(Color.WHITE);
-        explorerIBI.setBounds(10, 238, 211, 180);
-        fileViewer.add(explorerIBI);
-
-        JLabel lblEvenFiles = new JLabel("Event Files");
-        lblEvenFiles.setBounds(10, 429, 96, 14);
-        fileViewer.add(lblEvenFiles);
-
-        // Panel for event file explorer
-        JPanel explorerEvent = new JPanel();
-        // insert Event File explorer here
-        explorerEvent.setBackground(Color.WHITE);
-        explorerEvent.setBounds(10, 454, 211, 180);
-        fileViewer.add(explorerEvent);
-
+        fileViewer.add(lblBinaryFiles, BorderLayout.NORTH);
+        final JFileChooser fileChooser = new JFileChooser();
+        fileChooser.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (e.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
+                    System.out.println("File selected: "
+                            + fileChooser.getSelectedFile());
+                    fileSelected(fileChooser.getSelectedFile().getAbsolutePath());
+                }
+            }
+        });
+        fileViewer.add(fileChooser, BorderLayout.CENTER);
         // tab for Channels viewer
         JPanel channels = new JPanel();
         // insert channels viewer here
@@ -228,19 +211,46 @@ public class BaseUI {
 
     }
 
+    private void fileSelected(String filename) {
+        try {
+            cm.setPath(filename);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null,
+                    "Error opening file: " + filename);
+            e.printStackTrace();
+        }
+        updateCharts();
+    }
+
+    private void updateCharts() {
+        chartPanel.removeAll();
+        try {
+            initializeCharts(this.DEFAULT_FREQ);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        chartPanel.revalidate();
+    }
+
     public void initializeCharts(int freq) throws IOException {
+
+        // let's make some charts
         List<SynchronizedChart> charts = cm.generateCharts(freq);
+
+        // now add those charts to panels
+
         List<ChartPanel> cPanels = new ArrayList<ChartPanel>();
         for (SynchronizedChart chart : charts) {
             ChartPanel tmpPanel = new ChartPanel(chart);
+            tmpPanel.setPreferredSize(new Dimension(500, 300));
             cPanels.add(tmpPanel);
         }
+
         chartPanel.setLayout(new GridLayout(charts.size(), 1));
         for (ChartPanel panel : cPanels) {
             chartPanel.add(panel);
         }
-
-        // aaaand set the zoom listener
         this.setZoomListener(new ZoomOutAdapter(charts));
     }
 
