@@ -29,7 +29,7 @@ public class BinaryIOTest {
     // number of points to display per channel
     private static int pointsPerChannel = 30000;
     // math to set frequency to the correct value (assuming 1000 points / s)
-    private static int freq = (int) (end - start) / pointsPerChannel;
+    //private static int freq = (int) (end - start) / pointsPerChannel;
     
     
     // low end of the scale
@@ -83,13 +83,16 @@ public class BinaryIOTest {
             trace2.setName(channels.get(2).getName());
             trace3.setName(channels.get(3).getName());
             
+            // figure out the frequency
+            int freq = file.toFrequency(BinaryIOTest.start, BinaryIOTest.end, BinaryIOTest.pointsPerChannel);
+            
             // read the data from the file into the traces
             // Channel 0
-            file.read(trace0, 0, BinaryIOTest.start, BinaryIOTest.end, BinaryIOTest.freq);
+            file.read(trace0, 0, BinaryIOTest.start, BinaryIOTest.end, freq);
             // Channel 1
-            file.read(trace1, 1, BinaryIOTest.start, BinaryIOTest.end, BinaryIOTest.freq);
+            file.read(trace1, 1, BinaryIOTest.start, BinaryIOTest.end, freq);
             // Channel 2
-            file.read(trace2, 2, BinaryIOTest.start, BinaryIOTest.end, BinaryIOTest.freq);
+            file.read(trace2, 2, BinaryIOTest.start, BinaryIOTest.end, freq);
             // Channel 3
             //file.read(trace3, 3, BinaryIOTest.start, BinaryIOTest.end, BinaryIOTest.freq);
             

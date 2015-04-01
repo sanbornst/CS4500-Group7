@@ -378,6 +378,19 @@ public class BinaryIO implements FileIO {
         // points / scanRate = points / second, points/second * 1000 = points/ms
         return (long) Math.floor(points / this.scanRate * 1000);
     }
+    /**
+     * Converts points per channel into a frequency
+     * 
+     * @param start the start time (in ms) of the range
+     * @param end the end time (in ms) of the range
+     * @param points the number of points per channel
+     * 
+     * @return the frequency that should be used to obtain
+     * @throws IOException 
+     */
+    public int toFrequency(long start, long end, long points) throws IOException{
+        return (int) ((this.msToPoints(end) - this.msToPoints(start)) / points);
+    }
     
     /**
      * Extended ChannelInfo Object
