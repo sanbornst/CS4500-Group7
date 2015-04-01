@@ -274,7 +274,14 @@ public class BinaryIO implements FileIO {
         System.out.println("   Done reading data...");
         System.out.println();
     }
-    
+   
+    /**
+     * Is there a currently open file?
+     * @return <code>true</code> if there is a file open, <code>false</code> otherwise
+     */
+    public boolean isOpen() {
+        return this.source != null;
+    }
     /**
      * Closes the file.
      * 

@@ -324,9 +324,8 @@ public class XZoomPanChart extends Chart2D implements
 	 */
 	public void setXRange(double xMin, double xMax) {
 		IAxis<?> axisX = this.getAxisX();
-		Range xRange = new Range(xMin, xMax);
-		axisX.setRange(xRange);
-		
+		IRangePolicy zoomPolicyX = new RangePolicyFixedViewport(new Range(xMin, xMax));
+	        axisX.setRangePolicy(zoomPolicyX);
 	}
 	
 	/**
@@ -340,16 +339,20 @@ public class XZoomPanChart extends Chart2D implements
 		axisY.setRange(yRange);
 	}
 	
-	
+	private int scaledPanAmount() {
+	    IAxis<?> axisX = this.getAxisX();
+	    Range xRange = axisX.getRange();
+	    double dataRange = xRange.getExtent();
+	    return (int) (dataRange/100);
+	}
 	public void keyPressed(KeyEvent e) {
-		System.out.println("pressed");
 		//TODO : Scaling pan amount with zoom level
 		switch (e.getKeyCode()) {
 		case KeyEvent.VK_LEFT:
-			pan(-10, 0);
+			pan(-1 * scaledPanAmount(), 0);
 			break;
 		case KeyEvent.VK_RIGHT:
-			pan(10, 0);
+			pan(scaledPanAmount(), 0);
 			break;
 		case KeyEvent.VK_DOWN:
 			pan(0, -10);
@@ -376,14 +379,12 @@ public class XZoomPanChart extends Chart2D implements
 	@Override
 	public void keyTyped(KeyEvent e) {
 		// TODO Auto-generated method stub
-		System.out.println("typed");
 	}
 
 
 	@Override
 	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub
-		System.out.println("released");
 		
 	}
 }

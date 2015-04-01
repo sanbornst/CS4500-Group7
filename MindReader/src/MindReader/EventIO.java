@@ -93,15 +93,4 @@ class EventIO implements FileIO {
   public ArrayList<Event> getEventsForTest() {
     return events;
   }
-  
-  public static void main(String[] args) throws IOException {
-    EventIO testFile = new EventIO();
-    System.out.println("New instance created.");
-    testFile.open("PA_1_event.txt");
-    System.out.println("Small test file opened.");
-    ArrayList<Event> testEvents = testFile.getEventsForTest();
-    for (Event e : testEvents) {
-      System.out.println(e.getToolTip());
-    }
-  }
 }
