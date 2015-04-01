@@ -56,7 +56,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * Reads file header information
+     * Reads file header information.
      * 
      * @throws IOException
      */
@@ -314,7 +314,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * gets the scan rate of the file
+     * Gets the scan rate of the file.
      * 
      * @return the sampling rate of the file
      * 
@@ -327,7 +327,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * gets the end time of the file
+     * Gets the end time of the file.
      * 
      * @return the time (in ms) of the last entry in the file
      * 
@@ -341,7 +341,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * converts from ms time to # of points
+     * Converts from ms time to # of points.
      * 
      * @param time the time to convert (in ms)
      * 
@@ -357,7 +357,7 @@ public class BinaryIO implements FileIO {
     }
     
     /**
-     * converts from # of points to ms time
+     * Converts from # of points to ms time.
      * 
      * @param points the number of points
      * 
@@ -375,7 +375,7 @@ public class BinaryIO implements FileIO {
     /**
      * Extended ChannelInfo Object
      * 
-     * private extension to ChannelInfo to store extra channel information
+     * Private extension to ChannelInfo to store extra channel information.
      * 
      * @author Christopher Curreri
      */
@@ -390,14 +390,14 @@ public class BinaryIO implements FileIO {
         }
         
         /**
-         * gets the scale multiplier for this channel
+         * Gets the scale multiplier for this channel.
          * 
          * @return the scale multiplier
          */
         float getScale(){ return this.scale; }
         
         /**
-         * gets the scale offset of this channel
+         * Gets the scale offset of this channel.
          * 
          * @return the offset for the channel
          */
