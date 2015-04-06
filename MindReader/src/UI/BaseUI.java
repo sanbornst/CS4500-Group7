@@ -25,7 +25,6 @@ import javax.swing.JTextField;
 import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
 import MindChart.ZoomOutAdapter;
-import MindReader.BinaryIO;
 import info.monitorenter.gui.chart.views.ChartPanel;
 
 public class BaseUI {
@@ -41,13 +40,13 @@ public class BaseUI {
 
     public BaseUI() {
         initializeFrame();
-        cm = new ChartManager();
-       /* try {
+        cm = new ChartManager("data/PA_1.mw");
+        try {
             initializeCharts(this.DEFAULT_FREQ);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }*/
+        }
     }
 
     public void initializeFrame() {
@@ -144,8 +143,13 @@ public class BaseUI {
                             "Inputted bounds must be numbers!");
                     return;
                 }
-
-                cm.setRange(start, end);
+                
+                if (start >= end) {
+                    JOptionPane.showMessageDialog(null,
+                            "End value must be larger than start value!");
+                } else {
+                    cm.setRange(start, end);
+                }
             }
 
             @Override
@@ -185,6 +189,7 @@ public class BaseUI {
         sidebar.addTab("File", null, fileViewer, null);
         fileViewer.setLayout(new BorderLayout());
 
+        // add the file selector to the tabbed pane
         JLabel lblBinaryFiles = new JLabel("Binary Files");
         lblBinaryFiles.setBounds(10, 11, 64, 14);
         fileViewer.add(lblBinaryFiles, BorderLayout.NORTH);
@@ -194,7 +199,8 @@ public class BaseUI {
                 if (e.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
                     System.out.println("File selected: "
                             + fileChooser.getSelectedFile());
-                    fileSelected(fileChooser.getSelectedFile().getAbsolutePath());
+                    fileSelected(fileChooser.getSelectedFile()
+                            .getAbsolutePath());
                 }
             }
         });
@@ -215,14 +221,15 @@ public class BaseUI {
         try {
             cm.setPath(filename);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null,
-                    "Error opening file: " + filename);
+            JOptionPane.showMessageDialog(null, "Error opening file: "
+                    + filename);
             e.printStackTrace();
         }
         updateCharts();
     }
 
     private void updateCharts() {
+
         chartPanel.removeAll();
         try {
             initializeCharts(this.DEFAULT_FREQ);
@@ -230,6 +237,8 @@ public class BaseUI {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
+        // required for redraw
         chartPanel.revalidate();
     }
 
@@ -251,6 +260,8 @@ public class BaseUI {
         for (ChartPanel panel : cPanels) {
             chartPanel.add(panel);
         }
+        
+        // be very very quiet... we're hunting zooms
         this.setZoomListener(new ZoomOutAdapter(charts));
     }
 
