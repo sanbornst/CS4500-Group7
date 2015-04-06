@@ -15,6 +15,7 @@ import java.util.List;
 
 import info.monitorenter.gui.chart.Chart2D;
 import info.monitorenter.gui.chart.IAxis;
+import info.monitorenter.gui.chart.IAxisScalePolicy;
 import info.monitorenter.gui.chart.IRangePolicy;
 import info.monitorenter.gui.chart.ZoomableChart;
 import info.monitorenter.gui.chart.rangepolicies.RangePolicyFixedViewport;
@@ -22,369 +23,401 @@ import info.monitorenter.gui.chart.rangepolicies.RangePolicyUnbounded;
 import info.monitorenter.util.Range;
 
 /**
- * A Chart subclass to support x-axis zooming as well as panning
- * Note: Much of the zooming code is copied from the ZoomableChart class 
- * from the JChart2D library itself, with some modifications to disable y-axis 
- * zooming and enable panning.
+ * A Chart subclass to support x-axis zooming as well as panning Note: Much of
+ * the zooming code is copied from the ZoomableChart class from the JChart2D
+ * library itself, with some modifications to disable y-axis zooming and enable
+ * panning.
+ * 
  * @author jordanreedie
- *
+ * 
  */
-public class XZoomPanChart extends Chart2D implements 
-	KeyListener, MouseListener, MouseMotionListener {
+public class XZoomPanChart extends Chart2D implements KeyListener,
+        MouseListener, MouseMotionListener {
+    
+    private final int SCALING_FACTOR = 100;
+    /**
+     * Store the last mouse click and test in the mouseDragged-method which
+     * mouse-button was clicked.
+     */
+    private int m_lastPressedButton;
 
-	/**
-	   * Store the last mouse click and test in the mouseDragged-method which
-	   * mouse-button was clicked.
-	   */
-	  private int m_lastPressedButton;
+    /** The starting point of the mouse drag operation (click, then move). */
+    private Point2D m_startPoint;
 
-	  /** The starting point of the mouse drag operation (click, then move). */
-	  private Point2D m_startPoint;
+    /**
+     * Range policy used to zoom out to the minimum bounds that show every data
+     * point.
+     */
+    private IRangePolicy m_zoomAllRangePolicy = new RangePolicyUnbounded();
 
-	  /**
-	   * Range policy used to zoom out to the minimum bounds that show every data
-	   * point.
-	   */
-	  private IRangePolicy m_zoomAllRangePolicy = new RangePolicyUnbounded();
+    /** The area to zoom. */
+    private Rectangle2D m_zoomArea;
 
-	  /** The area to zoom. */
-	  private Rectangle2D m_zoomArea;
-	  
-	public XZoomPanChart() {
-		super();
-		
-	    this.addMouseListener(this);
-	    this.addMouseMotionListener(this);
-		this.addKeyListener(this);
-	}
-	/**
-	   * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
-	   */
-	  public void mouseClicked(final MouseEvent e) {
-	    /*
-	     * This will be used for zoom out in case ZoomableChart was not wrapped in a
-	     * ChartPanel. Might be replaced by "Hold down Ctrl and wheel" which seems a
-	     * famous gesture since e.g. Microsoft Visio.
-	     */
-	    if (e.getClickCount() == 2) {
-	      this.zoomAll();
-	    }
-	  }
+    public XZoomPanChart() {
+        super();
 
-	  /**
-	   * @see java.awt.event.MouseMotionListener#mouseDragged(java.awt.event.MouseEvent)
-	   */
-	  public void mouseDragged(final MouseEvent e) {
-	    if (this.m_lastPressedButton != MouseEvent.BUTTON1) {
-	      return;
-	    }
+        this.addMouseListener(this);
+        this.addMouseMotionListener(this);
+        this.addKeyListener(this);
+    }
 
-	    if ((e.getX() < 20)
-	        || (e.getX() > this.getXChartEnd())) {
-	      // nop
+    /**
+     * @see java.awt.event.MouseListener#mouseClicked(java.awt.event.MouseEvent)
+     */
+    public void mouseClicked(final MouseEvent e) {
+        /*
+         * This will be used for zoom out in case ZoomableChart was not wrapped
+         * in a ChartPanel. Might be replaced by "Hold down Ctrl and wheel"
+         * which seems a famous gesture since e.g. Microsoft Visio.
+         */
+        if (e.getClickCount() == 2) {
+            this.zoomAll();
+        }
+    }
 
-	    } else {
-	      double startX;
-	      double endX;
-	      double dimX;
+    /**
+     * @see java.awt.event.MouseMotionListener#mouseDragged(java.awt.event.MouseEvent)
+     */
+    public void mouseDragged(final MouseEvent e) {
+        if (this.m_lastPressedButton != MouseEvent.BUTTON1) {
+            return;
+        }
 
-	      // x-coordinate
-	      if (e.getX() > this.m_startPoint.getX()) {
-	        startX = this.m_startPoint.getX();
-	        endX = e.getX();
-	      } else {
-	        startX = e.getX();
-	        endX = this.m_startPoint.getX();
-	      }
+        if ((e.getX() < 20) || (e.getX() > this.getXChartEnd())) {
+            // nop
 
-	      if (startX < this.getXChartStart()) {
-	        startX = this.getXChartStart();
-	      }
+        } else {
+            double startX;
+            double endX;
+            double dimX;
 
-	      if (endX > (this.getWidth() - 20)) {
-	        endX = this.getWidth() - 20;
-	      }
-	      
-	      
-	      dimX = endX - startX;
-	      
-	      this.m_zoomArea = new Rectangle2D.Double(startX, 0, dimX, this.getYChartStart());
+            // x-coordinate
+            if (e.getX() > this.m_startPoint.getX()) {
+                startX = this.m_startPoint.getX();
+                endX = e.getX();
+            } else {
+                startX = e.getX();
+                endX = this.m_startPoint.getX();
+            }
 
-	      this.setRequestedRepaint(true);
-	    }
-	  }
+            if (startX < this.getXChartStart()) {
+                startX = this.getXChartStart();
+            }
 
-	  /**
-	   * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
-	   */
-	  public void mouseEntered(final MouseEvent e) {
-	    // nop
-	  }
+            if (endX > (this.getWidth() - 20)) {
+                endX = this.getWidth() - 20;
+            }
 
-	  /**
-	   * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
-	   */
-	  public void mouseExited(final MouseEvent e) {
-	    // nopnopnop
-	  }
+            dimX = endX - startX;
 
-	  /**
-	   * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
-	   */
-	  public void mouseMoved(final MouseEvent e) {
-	    // nop
-	  }
+            this.m_zoomArea = new Rectangle2D.Double(startX, 0, dimX,
+                    this.getYChartStart());
 
-	  /**
-	   * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
-	   */
-	  public void mousePressed(final MouseEvent e) {
-	    this.m_startPoint = new Point2D.Double(e.getX(), e.getY());
-	    this.m_lastPressedButton = e.getButton();
-	  }
+            this.setRequestedRepaint(true);
+        }
+    }
 
-	  /**
-	   * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
-	   */
-	  public void mouseReleased(final MouseEvent e) {
+    /**
+     * @see java.awt.event.MouseListener#mouseEntered(java.awt.event.MouseEvent)
+     */
+    public void mouseEntered(final MouseEvent e) {
+        // nop
+    }
 
-	    if (this.m_zoomArea != null) {
+    /**
+     * @see java.awt.event.MouseListener#mouseExited(java.awt.event.MouseEvent)
+     */
+    public void mouseExited(final MouseEvent e) {
+        // nopnopnop
+    }
 
-	      // x-coordinate
-	      double startPx = this.m_zoomArea.getX();
-	      double endPx = this.m_zoomArea.getX() + this.m_zoomArea.getWidth();
+    /**
+     * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
+     */
+    public void mouseMoved(final MouseEvent e) {
+        // nop
+    }
 
-	      // y-coordinate
-	      double startPy = this.m_zoomArea.getY();
-	      double endPy = this.m_zoomArea.getY() + this.m_zoomArea.getHeight();
+    /**
+     * @see java.awt.event.MouseListener#mousePressed(java.awt.event.MouseEvent)
+     */
+    public void mousePressed(final MouseEvent e) {
+        this.m_startPoint = new Point2D.Double(e.getX(), e.getY());
+        this.m_lastPressedButton = e.getButton();
+    }
 
-	      // do not zoom extremely small areas (does not work properly because of
-	      // calculation)
-	      if ((endPx - startPx) < 20 || (endPy - startPy) < 20) {
-	        this.m_zoomArea = null;
-	        this.setRequestedRepaint(true);
-	      } else {
+    /**
+     * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
+     */
+    public void mouseReleased(final MouseEvent e) {
 
-	        List<IAxis< ? >> axisList = this.getAxes();
-	        for (Iterator<IAxis< ? >> i = axisList.iterator(); i.hasNext();) {
-	          IAxis< ? > iAxis = i.next();
-	          if ((Chart2D.CHART_POSITION_BOTTOM == iAxis.getAxisPosition())
-	              || (Chart2D.CHART_POSITION_TOP == iAxis.getAxisPosition())) {// its
-	            // x
-	            // axis
-	            this.zoom(iAxis, startPx, endPx);
-	          }
-	          if ((Chart2D.CHART_POSITION_LEFT == iAxis.getAxisPosition())
-	              || (Chart2D.CHART_POSITION_RIGHT == iAxis.getAxisPosition())) {// its
-	            // x
-	            // axis
-	            this.zoom(iAxis, startPy, endPy);
-	          }
-	        }
-	      }
-	    }
-	  }
+        if (this.m_zoomArea != null) {
 
-	  /**
-	   * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
-	   */
-	  @Override
-	  protected synchronized void paintComponent(final Graphics g) {
+            // x-coordinate
+            double startPx = this.m_zoomArea.getX();
+            double endPx = this.m_zoomArea.getX() + this.m_zoomArea.getWidth();
 
-	    super.paintComponent(g);
+            // y-coordinate
+            double startPy = this.m_zoomArea.getY();
+            double endPy = this.m_zoomArea.getY() + this.m_zoomArea.getHeight();
 
-	    Graphics2D g2 = (Graphics2D) g;
+            // do not zoom extremely small areas (does not work properly because
+            // of
+            // calculation)
+            if ((endPx - startPx) < 20 || (endPy - startPy) < 20) {
+                this.m_zoomArea = null;
+                this.setRequestedRepaint(true);
+            } else {
 
-	    if (this.m_zoomArea != null) {
-	      g2.draw(this.m_zoomArea);
-	      g2.setPaint(new Color(255, 255, 0, 100));
-	      g2.fill(this.m_zoomArea);
-	    }
-	  }
+                List<IAxis<?>> axisList = this.getAxes();
+                for (Iterator<IAxis<?>> i = axisList.iterator(); i.hasNext();) {
+                    IAxis<?> iAxis = i.next();
+                    if ((Chart2D.CHART_POSITION_BOTTOM == iAxis
+                            .getAxisPosition())
+                            || (Chart2D.CHART_POSITION_TOP == iAxis
+                                    .getAxisPosition())) {// its
+                        // x
+                        // axis
+                        this.zoom(iAxis, startPx, endPx);
+                    }
+                    if ((Chart2D.CHART_POSITION_LEFT == iAxis.getAxisPosition())
+                            || (Chart2D.CHART_POSITION_RIGHT == iAxis
+                                    .getAxisPosition())) {// its
+                        // x
+                        // axis
+                        this.zoom(iAxis, startPy, endPy);
+                    }
+                }
+            }
+        }
+    }
 
-	  /**
-	   * Zooms to the selected bounds in x-axis.
-	   * <p>
-	   * 
-	   * @param xmin
-	   *          the lower x bound.
-	   * 
-	   * @param xmax
-	   *          the upper x bound.
-	   */
-	  public void zoom(final double xmin, final double xmax) {
+    /**
+     * @see javax.swing.JComponent#paintComponent(java.awt.Graphics)
+     */
+    @Override
+    protected synchronized void paintComponent(final Graphics g) {
 
-	    this.m_zoomArea = null;
+        super.paintComponent(g);
 
-	    IAxis< ? > axis = this.getAxisX();
-	    IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(xmin, xmax));
-	    axis.setRangePolicy(zoomPolicy);
-	  }
+        Graphics2D g2 = (Graphics2D) g;
 
-	  /**
-	   * Zooms the axis to the pixel value of start and end points.
-	   * <p>
-	   * Does not check for the position of axis so the caller must take care to
-	   * provide start x and end x for horizontal and start y and end y for vertical
-	   * axes.
-	   * 
-	   * @param axis
-	   *          the axis to zoom.
-	   * 
-	   * @param startP
-	   *          the start coordinate in the dimension of the given axis in pixel
-	   *          coords.
-	   * 
-	   * @param endP
-	   *          the end coordinate in the dimension of the given axis in pixel
-	   *          coords.
-	   */
-	  public void zoom(IAxis< ? > axis, final double startP, final double endP) {
+        if (this.m_zoomArea != null) {
+            g2.draw(this.m_zoomArea);
+            g2.setPaint(new Color(255, 255, 0, 100));
+            g2.fill(this.m_zoomArea);
+        }
+    }
 
-	    this.m_zoomArea = null;
+    /**
+     * Zooms to the selected bounds in x-axis.
+     * <p>
+     * 
+     * @param xmin
+     *            the lower x bound.
+     * 
+     * @param xmax
+     *            the upper x bound.
+     */
+    public void zoom(final double xmin, final double xmax) {
 
-	    double axisMin = axis.translatePxToValue((int) startP);
-	    double axisMax = axis.translatePxToValue((int) endP);
+        this.m_zoomArea = null;
 
-	    IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(axisMin, axisMax));
-	    axis.setRangePolicy(zoomPolicy);
-	  }
+        IAxis<?> axis = this.getAxisX();
+        IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(xmin,
+                xmax));
+        axis.setRangePolicy(zoomPolicy);
+    }
 
-	  /**
-	   * Zooms to the selected bounds in both directions.
-	   * <p>
-	   * 
-	   * @param xmin
-	   *          the lower x bound (value of chart (vs. pixel of screen)).
-	   * 
-	   * @param xmax
-	   *          the upper x bound (value of chart (vs. pixel of screen)).
-	   * 
-	   * @param ymin
-	   *          the lower y bound (value of chart (vs. pixel of screen)).
-	   * 
-	   * @param ymax
-	   *          the upper y bound (value of chart (vs. pixel of screen)).
-	   */
-	  public void zoom(final double xmin, final double xmax, final double ymin, final double ymax) {
+    /**
+     * Zooms the axis to the pixel value of start and end points.
+     * <p>
+     * Does not check for the position of axis so the caller must take care to
+     * provide start x and end x for horizontal and start y and end y for
+     * vertical axes.
+     * 
+     * @param axis
+     *            the axis to zoom.
+     * 
+     * @param startP
+     *            the start coordinate in the dimension of the given axis in
+     *            pixel coords.
+     * 
+     * @param endP
+     *            the end coordinate in the dimension of the given axis in pixel
+     *            coords.
+     */
+    public void zoom(IAxis<?> axis, final double startP, final double endP) {
 
-	    this.m_zoomArea = null;
+        this.m_zoomArea = null;
 
-	    IAxis< ? > axisX = this.getAxisX();
-	    IRangePolicy zoomPolicyX = new RangePolicyFixedViewport(new Range(xmin, xmax));
-	    axisX.setRangePolicy(zoomPolicyX);
+        double axisMin = axis.translatePxToValue((int) startP);
+        double axisMax = axis.translatePxToValue((int) endP);
 
-	    IAxis< ? > axisY = this.getAxisY();
-	    IRangePolicy zoomPolicyY = new RangePolicyFixedViewport(new Range(ymin, ymax));
-	    axisY.setRangePolicy(zoomPolicyY);
-	  }
+        IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(
+                axisMin, axisMax));
+        axis.setRangePolicy(zoomPolicy);
+       
+        //yuck
+        this.normalizeAxisY(); 
+        
+    }
 
-	  /**
-	   * Resets the zooming area to a range that displays all data.
-	   * 
-	   */
-	  public void zoomAll() {
-	    List<IAxis< ? >> axisList = this.getAxes();
-	    for (Iterator<IAxis< ? >> i = axisList.iterator(); i.hasNext();) {
-	      IAxis< ? > iAxis = i.next();
-	      iAxis.setRangePolicy(this.m_zoomAllRangePolicy);
-	    }
-	  }
-	
-	/**
-	 * Pan the chart by <code>deltaX</code> in the x-axis and <code>deltaY</code> in the y-axis
-	 * @param deltaX the amount to pan the x-axis
-	 * @param deltaY the amount to pan the y-axis
-	 */
-	public void pan(double deltaX, double deltaY) {
-		// x axis pan
-		IAxis<?> axisX = this.getAxisX();
-		
-		double xMin = axisX.getRange().getMin() + deltaX; 
- 		double xMax = axisX.getRange().getMax() + deltaX;
-		
- 		this.setXRange(xMin, xMax);
- 		
- 		// y axis pan
-		IAxis<?> axisY = this.getAxisY();
-		
-		
-		double yMin = axisY.getRange().getMin() + deltaY;
-		double yMax = axisY.getRange().getMax() + deltaY;
-		
-		this.setYRange(yMin, yMax);
-		
-		
-	}
-	
-	/**
-	 * Manually set the X-Axis range
-	 * @param xMin the lower bound for the axis
-	 * @param xMax the upper bound for the axis
-	 */
-	public void setXRange(double xMin, double xMax) {
-		IAxis<?> axisX = this.getAxisX();
-		IRangePolicy zoomPolicyX = new RangePolicyFixedViewport(new Range(xMin, xMax));
-	        axisX.setRangePolicy(zoomPolicyX);
-	}
-	
-	/**
-	 * Manually set the Y-Axis range
-	 * @param yMin the lower bound for the axis
-	 * @param yMax the upper bound for the axis
-	 */
-	public void setYRange(double yMin, double yMax) {
-		IAxis<?> axisY = this.getAxisY();
-		Range yRange = new Range(yMin, yMax);
-		axisY.setRange(yRange);
-	}
-	
-	private int scaledPanAmount() {
-	    IAxis<?> axisX = this.getAxisX();
-	    Range xRange = axisX.getRange();
-	    double dataRange = xRange.getExtent();
-	    return (int) (dataRange/100);
-	}
-	public void keyPressed(KeyEvent e) {
-		//TODO : Scaling pan amount with zoom level
-		switch (e.getKeyCode()) {
-		case KeyEvent.VK_LEFT:
-			pan(-1 * scaledPanAmount(), 0);
-			break;
-		case KeyEvent.VK_RIGHT:
-			pan(scaledPanAmount(), 0);
-			break;
-		case KeyEvent.VK_DOWN:
-			pan(0, -10);
-			break;
-		case KeyEvent.VK_UP:
-			pan(0, 10);
-			break;
-		default:
-			break;
-				
-		}
-	}	
-	
-	
-	public void pan(IAxis< ? > axis, final double startP, final double endP) {
-		
-	    double axisMin = axis.translatePxToValue((int) startP);
-	    double axisMax = axis.translatePxToValue((int) endP);
+    public void normalizeAxisY() {
+        double max = this.getTraces().first().getMaxY() * 1.2;
+        double min = this.getTraces().first().getMinY() * 1.2;
+        
+        IAxis<IAxisScalePolicy> yAxis = (IAxis<IAxisScalePolicy>) this.getAxisY();
+        yAxis.setRangePolicy(new RangePolicyFixedViewport(new Range(min, max)));
+    }
+    /**
+     * Zooms to the selected bounds in both directions.
+     * <p>
+     * 
+     * @param xmin
+     *            the lower x bound (value of chart (vs. pixel of screen)).
+     * 
+     * @param xmax
+     *            the upper x bound (value of chart (vs. pixel of screen)).
+     * 
+     * @param ymin
+     *            the lower y bound (value of chart (vs. pixel of screen)).
+     * 
+     * @param ymax
+     *            the upper y bound (value of chart (vs. pixel of screen)).
+     */
+    public void zoom(final double xmin, final double xmax, final double ymin,
+            final double ymax) {
 
-	    IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(axisMin, axisMax));
-	    axis.setRangePolicy(zoomPolicy);
-	  }
+        this.m_zoomArea = null;
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-	}
+        IAxis<?> axisX = this.getAxisX();
+        IRangePolicy zoomPolicyX = new RangePolicyFixedViewport(new Range(xmin,
+                xmax));
+        axisX.setRangePolicy(zoomPolicyX);
 
+        IAxis<?> axisY = this.getAxisY();
+        IRangePolicy zoomPolicyY = new RangePolicyFixedViewport(new Range(ymin,
+                ymax));
+        axisY.setRangePolicy(zoomPolicyY);
+    }
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
+    /**
+     * Resets the zooming area to a range that displays all data.
+     * 
+     */
+    public void zoomAll() {
+        List<IAxis<?>> axisList = this.getAxes();
+        for (Iterator<IAxis<?>> i = axisList.iterator(); i.hasNext();) {
+            IAxis<?> iAxis = i.next();
+            iAxis.setRangePolicy(this.m_zoomAllRangePolicy);
+        }
+    }
+
+    /**
+     * Pan the chart by <code>deltaX</code> in the x-axis and
+     * <code>deltaY</code> in the y-axis
+     * 
+     * @param deltaX
+     *            the amount to pan the x-axis
+     * @param deltaY
+     *            the amount to pan the y-axis
+     */
+    public void pan(double deltaX, double deltaY) {
+        // x axis pan
+        IAxis<?> axisX = this.getAxisX();
+
+        double xMin = axisX.getRange().getMin() + deltaX;
+        double xMax = axisX.getRange().getMax() + deltaX;
+
+        this.setXRange(xMin, xMax);
+
+        /*// y axis pan
+        IAxis<?> axisY = this.getAxisY();
+        
+        double yMin = axisY.getRange().getMin() + deltaY;
+        double yMax = axisY.getRange().getMax() + deltaY;
+
+        this.setYRange(yMin, yMax);
+        */
+    }
+
+    /**
+     * Manually set the X-Axis range
+     * 
+     * @param xMin
+     *            the lower bound for the axis
+     * @param xMax
+     *            the upper bound for the axis
+     */
+    public void setXRange(double xMin, double xMax) {
+        IAxis<?> axisX = this.getAxisX();
+        IRangePolicy zoomPolicyX = new RangePolicyFixedViewport(new Range(xMin,
+                xMax));
+        axisX.setRangePolicy(zoomPolicyX);
+        this.normalizeAxisY();
+    }
+
+    /**
+     * Manually set the Y-Axis range
+     * 
+     * @param yMin
+     *            the lower bound for the axis
+     * @param yMax
+     *            the upper bound for the axis
+     */
+    public void setYRange(double yMin, double yMax) {
+        IAxis<?> axisY = this.getAxisY();
+        Range yRange = new Range(yMin, yMax);
+        axisY.setRange(yRange);
+    }
+
+    private int scaledPanAmount() {
+        IAxis<?> axisX = this.getAxisX();
+        Range xRange = axisX.getRange();
+        double dataRange = xRange.getExtent();
+        return (int) (dataRange / SCALING_FACTOR);
+    }
+
+    public void keyPressed(KeyEvent e) {
+        // TODO : Scaling pan amount with zoom level
+        switch (e.getKeyCode()) {
+        case KeyEvent.VK_LEFT:
+            pan(-1 * scaledPanAmount(), 0);
+            break;
+        case KeyEvent.VK_RIGHT:
+            pan(scaledPanAmount(), 0);
+            break;
+        case KeyEvent.VK_DOWN:
+            pan(0, -10);
+            break;
+        case KeyEvent.VK_UP:
+            pan(0, 10);
+            break;
+        default:
+            break;
+
+        }
+    }
+
+    public void pan(IAxis<?> axis, final double startP, final double endP) {
+
+        double axisMin = axis.translatePxToValue((int) startP);
+        double axisMax = axis.translatePxToValue((int) endP);
+
+        IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(
+                axisMin, axisMax));
+        axis.setRangePolicy(zoomPolicy);
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        // TODO Auto-generated method stub
+
+    }
 }

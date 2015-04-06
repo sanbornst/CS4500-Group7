@@ -16,7 +16,7 @@ import MindReader.BinaryIO;
 import MindReader.ChannelInfo;
 
 /**
- * Utility class to generate chart(s) from <code>ITrace2D</code>s
+ * Class to manage & create from <code>ITrace2D</code>s
  * 
  * @author jordanreedie
  * 
@@ -28,6 +28,8 @@ public class ChartManager {
     private List<Color> colors;
     List<SynchronizedChart> charts;
 
+    private final int NUM_POINTS = 30000;
+    
     public ChartManager() {
         bio = new BinaryIO();
         initializeColors();
@@ -50,14 +52,17 @@ public class ChartManager {
         }
     }
 
-    public List<SynchronizedChart> generateCharts(int freq) throws IOException {
+    public List<SynchronizedChart> generateCharts(int maxPoints) throws IOException {
+       
         
         ArrayList<ChannelInfo> channels = bio.getChannels();
         List<ITrace2D> traces = new ArrayList<ITrace2D>();
         // create the trace objects && get some colors going
         for (int i = 0; i < channels.size(); i++) {
-            traces.add(new Trace2DSorted());
-            traces.get(i).setColor(colors.get(i));
+            Trace2DSorted trace = new Trace2DSorted();
+            trace.setColor(colors.get(i));
+            trace.setName(channels.get(i).getName());
+            traces.add(trace);
         }
 
         // generate charts before adding data to traces to prevent deadlock
@@ -65,18 +70,13 @@ public class ChartManager {
         
         // now populate traces with data!
         for (int i = 0; i < channels.size(); i++) {
+            int freq = bio.toFrequency(0, bio.getEndTime(), this.NUM_POINTS);
             bio.read(traces.get(i), channels.get(i).getId(), START,
                     bio.getEndTime(), freq);
         }
        
-        // set the y range to appropriate values
-        for (int i = 0; i < charts.size(); i++) {
-            //TODO method-ize this sucker
-            double max = traces.get(i).getMaxY() + 1;
-            double min = traces.get(i).getMinY() - 1;
-            
-            IAxis<IAxisScalePolicy> yAxis = (IAxis<IAxisScalePolicy>) charts.get(i).getAxisY();
-            yAxis.setRangePolicy(new RangePolicyFixedViewport(new Range(min, max)));
+        for (SynchronizedChart chart : charts) {
+            chart.normalizeAxisY();
         }
         // my charts!
         this.charts = charts;
@@ -122,10 +122,16 @@ public class ChartManager {
         return chart;
     }
 
+    /**
+     * Sets the path to the data file
+     * @param path
+     * @throws IOException
+     */
     public void setPath(String path) throws IOException {
         if (bio.isOpen()) {
             bio.close();
         } 
+        bio = new BinaryIO();
         bio.open(path);
     }
 
@@ -136,4 +142,5 @@ public class ChartManager {
         colors.add(Color.ORANGE);
         colors.add(Color.RED);
     }
+   
 }
