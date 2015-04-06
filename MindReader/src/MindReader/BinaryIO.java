@@ -234,41 +234,30 @@ public class BinaryIO implements FileIO {
         // create a byte[] to hold a single data point
         byte[] data = new byte[BinaryIO.dataSize];
         
-        // for each chunk of data to average together
-        for(long i = 0 ; i < (endPoint - startPoint) / freq; i++){
-            // average data together (rolling average)
-            
-            // start with a new point value
+        // loop from start point to end point
+        for(long i = startPoint; i < endPoint; i += freq){
             point = 0;
             
-            // for each point in the current chunk
-            for (int n = 0; n < freq; n++){
-                // skip data for channels before the one we want
-                this.source.skipBytes(BinaryIO.dataSize * id);
-                
-                // get the value out of the file
-                this.source.read(data, 0, BinaryIO.dataSize);
-                bb = ByteBuffer.wrap(data);
-                
-                // update average
-                point = (bb.getShort() + n * point) / (n + 1);
-
-                // skip data for channels after the one we want
-                this.source.skipBytes(BinaryIO.dataSize * (size - (id + 1)));
-            }
+            // skip data before the point
+            this.source.skipBytes(BinaryIO.dataSize * id);
             
-            // adjust point by channel scale and offset
-            point = point * channel.getScale() + channel.getOffset();
+            // get the value from the file
+            this.source.read(data, 0, BinaryIO.dataSize);
+            bb = ByteBuffer.wrap(data);
             
-            // adjust x value to account for averaging (if any)
-            // (initial start point) + (last point in chunk) - (half the size of chunk)
-            x = startPoint + (i * freq) - (freq - 1) / 2;
+            // adjust the value for scale and offset
+            point = bb.getShort() * channel.getScale() + channel.getOffset();
             
-            // convert x from points back to ms
-            x = this.pointsToMs(x);
+            // convert x position from points from start of file to ms
+            x = this.pointsToMs(i);
             
-            // add point to trace
+            // add the data to the trace
             trace.addPoint(x, point);
+            
+            // skip rest of row
+            this.source.skipBytes(BinaryIO.dataSize * (size - (id + 1)));
+            // skip freq - 1 rows of data
+            this.source.skipBytes(BinaryIO.dataSize * size * (freq - 1));
         }
         
         System.out.println("   Done reading data...");
@@ -282,6 +271,7 @@ public class BinaryIO implements FileIO {
     public boolean isOpen() {
         return this.source != null;
     }
+    
     /**
      * Closes the file.
      * 
@@ -414,21 +404,21 @@ public class BinaryIO implements FileIO {
          * 
          * @return the scale multiplier
          */
-        float getScale(){ return this.scale; }
+        public float getScale(){ return this.scale; }
         
         /**
          * Gets the scale offset of this channel.
          * 
          * @return the offset for the channel
          */
-        float getOffset(){ return this.offset; }
+        public float getOffset(){ return this.offset; }
         
         /**
          * Converts this ExtendedChannelInfo object into a regular ChannelInfo object
          * 
          * @return the ChannelInfo version of this object
          */
-        ChannelInfo toChannelInfo(){
+        public ChannelInfo toChannelInfo(){
             return new ChannelInfo(this.getId(), this.getType(), this.getName());
         }
     }

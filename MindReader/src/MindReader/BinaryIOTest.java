@@ -21,13 +21,13 @@ import javax.swing.JFrame;
 
 public class BinaryIOTest {
     // Path to pull data from 
-    private static String path = "/path/to/data/smaller/PA_1.mw";
+    private static String path = "/data/smaller/PA_1.mw";
     // start time (in ms)
     private static long start = 0;
     // end time (in ms)
     private static long end = 297000;
     // number of points to display per channel
-    private static int pointsPerChannel = 30000;
+    private static int pointsPerChannel = 40000;
     // math to set frequency to the correct value (assuming 1000 points / s)
     //private static int freq = (int) (end - start) / pointsPerChannel;
     
@@ -59,6 +59,9 @@ public class BinaryIOTest {
         trace1.setColor(Color.red);
         trace2.setColor(Color.blue);
         trace3.setColor(Color.green);
+        
+        long startTime = 0;
+        long endTime = 0;
 
   
         @SuppressWarnings("unchecked")
@@ -73,6 +76,7 @@ public class BinaryIOTest {
         
         try {
             System.out.println("Opening file...");
+            startTime = System.currentTimeMillis();
             file.open(BinaryIOTest.path);
             
             ArrayList<ChannelInfo> channels = file.getChannels();
@@ -94,7 +98,10 @@ public class BinaryIOTest {
             // Channel 2
             file.read(trace2, 2, BinaryIOTest.start, BinaryIOTest.end, freq);
             // Channel 3
-            //file.read(trace3, 3, BinaryIOTest.start, BinaryIOTest.end, BinaryIOTest.freq);
+            file.read(trace3, 3, BinaryIOTest.start, BinaryIOTest.end, freq);
+            
+            endTime = System.currentTimeMillis();
+            System.out.println("Time to read files: " + (endTime - startTime) + "ms");
             
         } catch (IOException e) {
             System.out.println("Unable to open file: " + e);
@@ -135,6 +142,9 @@ public class BinaryIOTest {
                 }
               );
             frame.setVisible(true);
+            
+            endTime = System.currentTimeMillis();
+            System.out.println("Time until chart displayed: " + (endTime - startTime) + "ms");
         }
     }
 }
