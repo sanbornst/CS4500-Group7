@@ -175,25 +175,23 @@ public class SynchronizedChart extends XZoomPanChart {
 	/**
 	 * tell all charts to pan the given number of units
 	 * @param deltaX the number of x units to pan
-	 * @param deltaY the number of y units to pan
 	 */
-	public void pan(double deltaX, double deltaY) {
+	public void pan(double deltaX) {
 		if (synced) {
 			for (SynchronizedChart chart : friends) {
-				chart.panSelf(deltaX, deltaY);
+				chart.panSelf(deltaX);
 			}
 		} else {
-			super.pan(deltaX, deltaY);
+			super.pan(deltaX);
 		}
 	}
 
 	/**
 	 * Pan the chart by the given number of units
 	 * @param deltaX x units to pan
-	 * @param deltaY y units to pan
 	 */
-	public void panSelf(double deltaX, double deltaY) {
-		super.pan(deltaX, deltaY);
+	public void panSelf(double deltaX) {
+		super.pan(deltaX);
 	}
 
 	/**

@@ -33,7 +33,7 @@ import info.monitorenter.util.Range;
  */
 public class XZoomPanChart extends Chart2D implements KeyListener,
         MouseListener, MouseMotionListener {
-    
+
     private final int SCALING_FACTOR = 100;
     /**
      * Store the last mouse click and test in the mouseDragged-method which
@@ -257,19 +257,34 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
         IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(
                 axisMin, axisMax));
         axis.setRangePolicy(zoomPolicy);
-       
-        //yuck
-        this.normalizeAxisY(); 
-        
+
+        // yuck
+        this.normalizeAxisY();
+
     }
 
+    /**
+     * Sets the y axis range to something reasonable (default axis management is
+     * kinda bad)
+     */
     public void normalizeAxisY() {
-        double max = this.getTraces().first().getMaxY() * 1.2;
-        double min = this.getTraces().first().getMinY() * 1.2;
-        
-        IAxis<IAxisScalePolicy> yAxis = (IAxis<IAxisScalePolicy>) this.getAxisY();
+        double max = this.getTraces().first().getMaxY();
+        double min = this.getTraces().first().getMinY();
+        max += max * (max > 0 ? 0.2 : -0.2);
+        min -= min * (min > 0 ? 0.2 : -0.2);
+
+        if (max == 0) {
+            max += 0.5;
+        }
+        if (min == 0) {
+            min -= 0.5;
+        }
+
+        IAxis<IAxisScalePolicy> yAxis = (IAxis<IAxisScalePolicy>) this
+                .getAxisY();
         yAxis.setRangePolicy(new RangePolicyFixedViewport(new Range(min, max)));
     }
+
     /**
      * Zooms to the selected bounds in both directions.
      * <p>
@@ -304,7 +319,6 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
 
     /**
      * Resets the zooming area to a range that displays all data.
-     * 
      */
     public void zoomAll() {
         List<IAxis<?>> axisList = this.getAxes();
@@ -315,16 +329,13 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
     }
 
     /**
-     * Pan the chart by <code>deltaX</code> in the x-axis and
-     * <code>deltaY</code> in the y-axis
+     * Pan the chart by <code>deltaX</code> in the x-axis 
      * 
      * @param deltaX
      *            the amount to pan the x-axis
-     * @param deltaY
-     *            the amount to pan the y-axis
      */
-    public void pan(double deltaX, double deltaY) {
-        // x axis pan
+    public void pan(double deltaX) {
+        
         IAxis<?> axisX = this.getAxisX();
 
         double xMin = axisX.getRange().getMin() + deltaX;
@@ -332,14 +343,6 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
 
         this.setXRange(xMin, xMax);
 
-        /*// y axis pan
-        IAxis<?> axisY = this.getAxisY();
-        
-        double yMin = axisY.getRange().getMin() + deltaY;
-        double yMax = axisY.getRange().getMax() + deltaY;
-
-        this.setYRange(yMin, yMax);
-        */
     }
 
     /**
@@ -372,6 +375,11 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
         axisY.setRange(yRange);
     }
 
+    /**
+     * Determines the amount to pan based on the level of zoom
+     * 
+     * @return
+     */
     private int scaledPanAmount() {
         IAxis<?> axisX = this.getAxisX();
         Range xRange = axisX.getRange();
@@ -380,44 +388,27 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
     }
 
     public void keyPressed(KeyEvent e) {
-        // TODO : Scaling pan amount with zoom level
         switch (e.getKeyCode()) {
         case KeyEvent.VK_LEFT:
-            pan(-1 * scaledPanAmount(), 0);
+            pan(-1 * scaledPanAmount());
             break;
         case KeyEvent.VK_RIGHT:
-            pan(scaledPanAmount(), 0);
-            break;
-        case KeyEvent.VK_DOWN:
-            pan(0, -10);
-            break;
-        case KeyEvent.VK_UP:
-            pan(0, 10);
+            pan(scaledPanAmount());
             break;
         default:
+            // nop nop nop
             break;
 
         }
     }
-
-    public void pan(IAxis<?> axis, final double startP, final double endP) {
-
-        double axisMin = axis.translatePxToValue((int) startP);
-        double axisMax = axis.translatePxToValue((int) endP);
-
-        IRangePolicy zoomPolicy = new RangePolicyFixedViewport(new Range(
-                axisMin, axisMax));
-        axis.setRangePolicy(zoomPolicy);
-    }
-
+   
     @Override
     public void keyTyped(KeyEvent e) {
-        // TODO Auto-generated method stub
+        // nop
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        // TODO Auto-generated method stub
-
+        // nope nop
     }
 }

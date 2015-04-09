@@ -252,7 +252,7 @@ public class BinaryIO implements FileIO {
             x = this.pointsToMs(i);
             
             // add the data to the trace
-            trace.addPoint(x, point);
+            trace.addPoint(Utils.msToSeconds(x), point);
             
             // skip rest of row
             this.source.skipBytes(BinaryIO.dataSize * (size - (id + 1)));

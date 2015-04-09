@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class ZoomOutAdapter implements ActionListener {
     /** The zoomable charts to act upon. */
-    private List<SynchronizedChart> m_zoomableCharts;
+    private ChartManager cm;
 
     /**
      * Creates an instance that will reset zooming on the given zoomable charts
@@ -26,22 +26,15 @@ public class ZoomOutAdapter implements ActionListener {
      * @param charts
      *            the charts to reset zooming on.
      */
-    public ZoomOutAdapter(final List<SynchronizedChart> charts) {
-        this.m_zoomableCharts = charts;
+    public ZoomOutAdapter(final ChartManager cm) {
+        this.cm = cm;
     }
 
     /**
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(final ActionEvent event) {
-        for (SynchronizedChart chart : m_zoomableCharts) {
-            chart.zoomAll();
-            double max = chart.getTraces().first().getMaxY() + 1;
-            double min = chart.getTraces().first().getMinY() - 1;
-            
-            IAxis<IAxisScalePolicy> yAxis = (IAxis<IAxisScalePolicy>) chart.getAxisY();
-            yAxis.setRangePolicy(new RangePolicyFixedViewport(new Range(min, max)));
-        }
+        cm.zoomOut();
     }
 
 }

@@ -27,9 +27,13 @@ import MindChart.SynchronizedChart;
 import MindChart.ZoomOutAdapter;
 import info.monitorenter.gui.chart.views.ChartPanel;
 
+/**
+ * Class to represent the UI
+ * @author jordanreedie
+ *
+ */
 public class BaseUI {
 
-    private final int DEFAULT_FREQ = 11;
     private JButton btnReset;
     private JFrame frame;
     private JPanel chartPanel;
@@ -42,14 +46,17 @@ public class BaseUI {
         initializeFrame();
         cm = new ChartManager("data/PA_1.mw");
         try {
-            initializeCharts(this.DEFAULT_FREQ);
+            initializeCharts();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
-    public void initializeFrame() {
+    /**
+     * Creates the frame and adds some stuff to it
+     */
+    private void initializeFrame() {
         frame = new JFrame();
         frame.setBounds(100, 100, 800, 720);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -132,11 +139,11 @@ public class BaseUI {
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                int start = 0;
-                int end = 0;
+                double start = 0;
+                double end = 0;
                 try {
-                    start = Integer.parseInt(startPoint.getText());
-                    end = Integer.parseInt(endPoint.getText());
+                    start = Double.parseDouble(startPoint.getText());
+                    end = Double.parseDouble(endPoint.getText());
 
                 } catch (NumberFormatException oops) {
                     JOptionPane.showMessageDialog(null,
@@ -148,7 +155,12 @@ public class BaseUI {
                     JOptionPane.showMessageDialog(null,
                             "End value must be larger than start value!");
                 } else {
-                    cm.setRange(start, end);
+                    try {
+                        cm.setRange(start, end);
+                    } catch (IOException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
                 }
             }
 
@@ -199,7 +211,7 @@ public class BaseUI {
                 if (e.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
                     System.out.println("File selected: "
                             + fileChooser.getSelectedFile());
-                    fileSelected(fileChooser.getSelectedFile()
+                    mwFileSelected(fileChooser.getSelectedFile()
                             .getAbsolutePath());
                 }
             }
@@ -217,7 +229,11 @@ public class BaseUI {
 
     }
 
-    private void fileSelected(String filename) {
+    /**
+     * called when a user selects a mindware file
+     * @param filename
+     */
+    private void mwFileSelected(String filename) {
         try {
             cm.setPath(filename);
         } catch (IOException e) {
@@ -228,11 +244,14 @@ public class BaseUI {
         updateCharts();
     }
 
+    /**
+     * Remove all points from chart, re-pull data, re-display charts
+     */
     private void updateCharts() {
 
         chartPanel.removeAll();
         try {
-            initializeCharts(this.DEFAULT_FREQ);
+            this.initializeCharts();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -242,10 +261,14 @@ public class BaseUI {
         chartPanel.revalidate();
     }
 
-    public void initializeCharts(int freq) throws IOException {
+    /**
+     * Creates charts & adds them to the panel
+     * @throws IOException
+     */
+    private void initializeCharts() throws IOException {
 
         // let's make some charts
-        List<SynchronizedChart> charts = cm.generateCharts(freq);
+        List<SynchronizedChart> charts = cm.generateCharts();
 
         // now add those charts to panels
 
@@ -257,14 +280,19 @@ public class BaseUI {
         }
 
         chartPanel.setLayout(new GridLayout(charts.size(), 1));
+        // and add those chart panels to the main chart container
         for (ChartPanel panel : cPanels) {
             chartPanel.add(panel);
         }
         
         // be very very quiet... we're hunting zooms
-        this.setZoomListener(new ZoomOutAdapter(charts));
+        this.setZoomListener(new ZoomOutAdapter(cm));
     }
 
+    /**
+     * Sets the zoom listener for the charts
+     * @param l The provided zoom listener
+     */
     public void setZoomListener(ActionListener l) {
         btnReset.addActionListener(l);
     }
