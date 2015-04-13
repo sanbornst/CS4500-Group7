@@ -22,9 +22,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.ScrollPaneConstants;
 
 import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
@@ -33,37 +35,29 @@ import info.monitorenter.gui.chart.views.ChartPanel;
 
 /**
  * Class to represent the UI
+ * 
  * @author jordanreedie
- *
+ * 
  */
 public class BaseUI {
 
     private JButton btnReset;
     private JFrame frame;
+    private JPanel mainPanel;
     private JPanel chartPanel;
+    private JPanel overlayPanel;
     private JTabbedPane sidebar;
     private JTextField startPoint;
     private JTextField endPoint;
     private ChartManager cm;
-    
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    BaseUI window = new BaseUI();
-                    window.display();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
+    private JScrollPane scrollPanel;
 
     public BaseUI() {
         initializeFrame();
         cm = new ChartManager("data/PA_1.mw");
         try {
             initializeCharts();
+            initializeOverlay();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -74,53 +68,54 @@ public class BaseUI {
      * Creates the frame and adds some stuff to it
      */
     private void initializeFrame() {
+
         frame = new JFrame();
         frame.setBounds(100, 100, 800, 720);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout());
         frame.setResizable(true);
+
         // frame is divided into two main pieces:
         // the sidebar, and the main panel
-
         initializeSidebar();
 
         // Main panel area
-        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel = new JPanel(new BorderLayout());
         frame.getContentPane().add(mainPanel);
 
         // insert graphs for separate view here
         chartPanel = new JPanel();
+        overlayPanel = new JPanel();
+        scrollPanel = new JScrollPane();
+        scrollPanel.setVerticalScrollBarPolicy(
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        scrollPanel.setHorizontalScrollBarPolicy(
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPanel.setVisible(true);
         JPanel topPanel = new JPanel();
-        topPanel.setPreferredSize(new Dimension(0, 40));
+        topPanel.setPreferredSize(new Dimension(900, 60));
+        // holds the bottom buttons (zoom, zoom out, etc)
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setPreferredSize(new Dimension(0, 40));
-        mainPanel.add(chartPanel, BorderLayout.CENTER);
+        mainPanel.add(scrollPanel, BorderLayout.CENTER);
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        topPanel.setLayout(new FlowLayout());
+        overlayPanel.setVisible(false);
+        
+        // button toggle separate view
+        JButton btnSeparate = new JButton("Switch View");
+        btnSeparate.setPreferredSize(new Dimension(120, 30));
+        btnSeparate.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                // swap 'em
+                swapChartPanels();
+            }
+        });
 
-        /*
-         * useless for now // panel displaying collapse view final JPanel
-         * collapsePanel = new JPanel();d // insert graphs for collapse view
-         * here collapsePanel.setBackground(Color.WHITE);
-         * collapsePanel.setBounds(248, 46, 536, 612);
-         * frame.getContentPane().add(collapsePanel);
-         * collapsePanel.setLayout(null);
-         * 
-         * // button toggle separate view JButton btnSeperate = new
-         * JButton("Seperate"); btnSeperate.setBounds(586, 13, 94, 23);
-         * btnSeperate.addActionListener(new ActionListener() { public void
-         * actionPerformed(ActionEvent arg0) { collapsePanel.setVisible(false);
-         * chartPanel.setVisible(true); } });
-         * frame.getContentPane().add(btnSeperate);
-         * 
-         * // button toggle separate view JButton btnCollapse = new
-         * JButton("Collapse"); btnCollapse.addActionListener(new
-         * ActionListener() { public void actionPerformed(ActionEvent arg0) {
-         * collapsePanel.setVisible(true); chartPanel.setVisible(false); } });
-         * btnCollapse.setBounds(690, 13, 94, 23);
-         * frame.getContentPane().add(btnCollapse);
-         */
-
+        topPanel.add(btnSeparate);
+        // button toggle separate view
         JPanel buttonPanel = new JPanel();
         bottomPanel.add(buttonPanel, BorderLayout.WEST);
 
@@ -170,7 +165,7 @@ public class BaseUI {
                             "Inputted bounds must be numbers!");
                     return;
                 }
-                
+
                 if (start >= end) {
                     JOptionPane.showMessageDialog(null,
                             "End value must be larger than start value!");
@@ -252,12 +247,40 @@ public class BaseUI {
         sidebar.addTab("Video", null, video, null);
 
     }
+    
+    /**
+     *  Swaps the chart & overlay panels
+     */
+    private void swapChartPanels() {
+
+        if (scrollPanel.isVisible()) {
+            mainPanel.remove(scrollPanel);
+            scrollPanel.setVisible(false);
+            overlayPanel.setVisible(true);
+            mainPanel.add(overlayPanel, BorderLayout.CENTER);
+        } else {
+            mainPanel.remove(overlayPanel);
+            overlayPanel.setVisible(false);
+            scrollPanel.setVisible(true);
+            mainPanel.add(scrollPanel, BorderLayout.CENTER);
+        }
+        
+        frame.revalidate();
+        //revalidate and repaint
+        mainPanel.revalidate();
+        scrollPanel.revalidate();
+        overlayPanel.revalidate();
+        mainPanel.repaint();
+        
+    }
 
     /**
-     * called when a user selects a mindware file
+     * called when a user selects a mindware file, loads the file and updates the charts
+     * 
      * @param filename
      */
     private void mwFileSelected(String filename) {
+
         try {
             cm.setPath(filename);
         } catch (IOException e) {
@@ -280,13 +303,14 @@ public class BaseUI {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
         // required for redraw
         chartPanel.revalidate();
     }
 
     /**
      * Creates charts & adds them to the panel
+     * 
      * @throws IOException
      */
     private void initializeCharts() throws IOException {
@@ -295,11 +319,10 @@ public class BaseUI {
         List<SynchronizedChart> charts = cm.generateCharts();
 
         // now add those charts to panels
-
         List<ChartPanel> cPanels = new ArrayList<ChartPanel>();
         for (SynchronizedChart chart : charts) {
             ChartPanel tmpPanel = new ChartPanel(chart);
-            tmpPanel.setPreferredSize(new Dimension(500, 300));
+            tmpPanel.setPreferredSize(new Dimension(200, 130));
             cPanels.add(tmpPanel);
         }
 
@@ -308,9 +331,19 @@ public class BaseUI {
         for (ChartPanel panel : cPanels) {
             chartPanel.add(panel);
         }
-        
+
         // be very very quiet... we're hunting zooms
         this.setZoomListener(new ZoomOutAdapter(cm));
+        scrollPanel.setViewportView(chartPanel);
+        scrollPanel.revalidate();
+    }
+    
+    private void initializeOverlay() {
+       SynchronizedChart overlaidChart = cm.generateOverlay();
+       ChartPanel cPanel = new ChartPanel(overlaidChart);
+       cPanel.setPreferredSize(new Dimension(500, 500));
+       overlayPanel.setLayout(new GridLayout(1, 1));
+       overlayPanel.add(cPanel);
     }
     
     // method to add channels to channelView tab
@@ -353,7 +386,9 @@ public class BaseUI {
 
     /**
      * Sets the zoom listener for the charts
-     * @param l The provided zoom listener
+     * 
+     * @param l
+     *            The provided zoom listener
      */
     public void setZoomListener(ActionListener l) {
         btnReset.addActionListener(l);
