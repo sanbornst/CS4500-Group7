@@ -25,7 +25,7 @@ public class BinaryIO implements FileIO {
     // CONSTANTS
     // The size of each data point in bytes
     private static final int intSize = 4;  // the size of an int in bytes
-    private static final int dataSize = 2; // the size of each data point (short)
+    private static final int dataSize = BinaryIO.intSize / 2; // the size of each data point (short)
     
     // Constructor
     public BinaryIO(){
@@ -194,7 +194,7 @@ public class BinaryIO implements FileIO {
         // length bytes + name bytes + rest bytes
         return 4 + nameLength + 30;
     }
-
+    
     /**
      * Sequentially reads channel data from the file.
      * 
@@ -207,6 +207,23 @@ public class BinaryIO implements FileIO {
      * @throws IOException
      */
     public void read(ITrace2D trace, int id, long start, long end, int freq) throws IOException {
+        // call read without an offset
+        read(trace, id, start, end, freq, 0);
+    }
+
+    /**
+     * Sequentially reads channel data from the file.
+     * 
+     * @param channel the ITRace2D instance to read data into
+     * @param id the id of the channel to read from
+     * @param start the position to start reading from
+     * @param length how many entries to read
+     * @param freq how many points to average together (min of 1)
+     * @param userOffset value to offset all data points by
+     * 
+     * @throws IOException
+     */
+    public void read(ITrace2D trace, int id, long start, long end, int freq, long userOffset) throws IOException {
         ByteBuffer bb;
         double point;
         long x;
@@ -245,8 +262,8 @@ public class BinaryIO implements FileIO {
             this.source.read(data, 0, BinaryIO.dataSize);
             bb = ByteBuffer.wrap(data);
             
-            // adjust the value for scale and offset
-            point = bb.getShort() * channel.getScale() + channel.getOffset();
+            // adjust the value for scale, offset, and user-defined offset
+            point = bb.getShort() * channel.getScale() + channel.getOffset() + userOffset;
             
             // convert x position from points from start of file to ms
             x = this.pointsToMs(i);
