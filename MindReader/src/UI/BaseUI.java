@@ -51,10 +51,11 @@ public class BaseUI {
     private JTextField endPoint;
     private ChartManager cm;
     private JScrollPane scrollPanel;
+    private boolean isOverlay;
 
     public BaseUI() {
         initializeFrame();
-        cm = new ChartManager("data/PA_1.mw");
+        cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt", "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
         try {
             initializeCharts();
             initializeOverlay();
@@ -282,7 +283,7 @@ public class BaseUI {
     private void mwFileSelected(String filename) {
 
         try {
-            cm.setPath(filename);
+            cm.setMwPath(filename);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error opening file: "
                     + filename);
@@ -296,16 +297,21 @@ public class BaseUI {
      */
     private void updateCharts() {
 
+        scrollPanel.removeAll();
         chartPanel.removeAll();
+        overlayPanel.removeAll();
         try {
             this.initializeCharts();
+            this.initializeOverlay();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
         // required for redraw
+        scrollPanel.revalidate();
         chartPanel.revalidate();
+        overlayPanel.revalidate();
     }
 
     /**
@@ -322,7 +328,7 @@ public class BaseUI {
         List<ChartPanel> cPanels = new ArrayList<ChartPanel>();
         for (SynchronizedChart chart : charts) {
             ChartPanel tmpPanel = new ChartPanel(chart);
-            tmpPanel.setPreferredSize(new Dimension(200, 130));
+            tmpPanel.setPreferredSize(new Dimension(200, ChartManager.MINIMUM_CHART_HEIGHT));
             cPanels.add(tmpPanel);
         }
 

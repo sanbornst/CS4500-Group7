@@ -19,7 +19,7 @@ import java.awt.Point;
  * 
  * @author Samantha Sanborn
  */
-class IbiIO implements FileIO {
+public class IbiIO implements FileIO {
   // parameters
   private ArrayList<Integer> data;
   private Point2D[] points;
@@ -31,7 +31,7 @@ class IbiIO implements FileIO {
   /**
    * IbiIO constructor
    */
-  IbiIO() {
+  public IbiIO() {
     data = null;
     points = null;
     startDelay = 0;
@@ -79,7 +79,7 @@ class IbiIO implements FileIO {
   public void read(ITrace2D channel, int id, long start, long end, int frequency) throws IOException {
     for (int i = 0; i < points.length; i++) { // each point
      if (points[i].getX() >= start && points[i].getX() <= end) { // if point is between start and end
-       channel.addPoint(new TracePoint2D(points[i].getX(), points[i].getY())); // add the point to the channel
+       channel.addPoint(new TracePoint2D(Utils.msToSeconds((long) points[i].getX()), points[i].getY())); // add the point to the channel
      } else if (points[i].getX() > end) { // as soon as we get past the end of the data (since points is in order)
        break;
      }

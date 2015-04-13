@@ -2,7 +2,6 @@ package MindReader;
 
 import com.opencsv.*;
 import info.monitorenter.gui.chart.ITrace2D;
-import info.monitorenter.gui.chart.TracePoint2D;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,12 +10,12 @@ import java.io.FileReader;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
-class EventIO implements FileIO {
+public class EventIO implements FileIO {
   private ArrayList<Event> events;
   private CSVReader source;
   private ArrayList<ChannelInfo> channels;
   
-  EventIO() {
+  public EventIO() {
     events = new ArrayList<Event>();
     channels = new ArrayList<ChannelInfo>();
     channels.add(new ChannelInfo(0, ChannelType.EVENT, "Events"));
