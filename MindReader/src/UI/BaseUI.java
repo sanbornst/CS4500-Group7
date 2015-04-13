@@ -3,6 +3,7 @@ package UI;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -14,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,6 +24,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 
 import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
@@ -41,6 +45,19 @@ public class BaseUI {
     private JTextField startPoint;
     private JTextField endPoint;
     private ChartManager cm;
+    
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    BaseUI window = new BaseUI();
+                    window.display();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 
     public BaseUI() {
         initializeFrame();
@@ -106,10 +123,6 @@ public class BaseUI {
 
         JPanel buttonPanel = new JPanel();
         bottomPanel.add(buttonPanel, BorderLayout.WEST);
-        // button to reset zoom percentage
-        btnReset = new JButton("Reset");
-        btnReset.setPreferredSize(new Dimension(73, 21));
-        buttonPanel.add(btnReset);
 
         JLabel lblStartPoint = new JLabel("Start:");
         lblStartPoint.setPreferredSize(new Dimension(49, 14));
@@ -130,11 +143,18 @@ public class BaseUI {
         endPoint.setColumns(10);
         endPoint.setPreferredSize(new Dimension(40, 20));
         buttonPanel.add(endPoint);
+        
 
         // button to zoom according to the entered points
         JButton btnZoom = new JButton("zoom");
         btnZoom.setPreferredSize(new Dimension(89, 21));
         buttonPanel.add(btnZoom);
+        
+        // button to reset zoom percentage
+        btnReset = new JButton("Reset");
+        btnReset.setPreferredSize(new Dimension(73, 21));
+        buttonPanel.add(btnReset);
+        
         btnZoom.addMouseListener(new MouseListener() {
 
             @Override
@@ -189,6 +209,7 @@ public class BaseUI {
             }
 
         });
+        
     }
 
     public void initializeSidebar() {
@@ -221,6 +242,9 @@ public class BaseUI {
         JPanel channels = new JPanel();
         // insert channels viewer here
         sidebar.addTab("Channels", null, channels, null);
+        channels.setLayout(null);
+        addChannel(channels, 0);
+        addChannel(channels, 1);
 
         // tab for video viewer
         JPanel video = new JPanel();
@@ -287,6 +311,44 @@ public class BaseUI {
         
         // be very very quiet... we're hunting zooms
         this.setZoomListener(new ZoomOutAdapter(cm));
+    }
+    
+    // method to add channels to channelView tab
+    // maybe need more variables from reading channels...
+    private void addChannel(JPanel panel, int nth){
+        
+        JLabel lblChennalPreview = new JLabel("Channel 1");
+        lblChennalPreview.setBounds(10, 7 + (nth * 105), 61, 18);
+        panel.add(lblChennalPreview);
+        
+        JCheckBox chckbxShow = new JCheckBox("Show");
+        chckbxShow.setBounds(165, 7 + (nth * 105), 61, 18);
+        // add listener here to toggle
+        panel.add(chckbxShow);
+        
+        // drop down menu for color selection
+        JComboBox colorSelector = new JComboBox();
+        colorSelector.setBounds(10, 76 + (nth * 105), 216, 20);
+        colorSelector.addItem("red");
+        colorSelector.addItem("green");
+        colorSelector.addItem("blue");
+        colorSelector.addItem("cyan");
+        colorSelector.addItem("yellow");
+        colorSelector.addItem("magenta");
+        colorSelector.addItem("black");
+        colorSelector.addActionListener(new ActionListener() {
+            // add action here to change color
+            public void actionPerformed(ActionEvent arg0) {
+            }
+        });
+        panel.add(colorSelector);
+        
+        // panel for preview of channel
+        JPanel chennelPreview = new JPanel();
+        chennelPreview.setBackground(Color.WHITE);
+        chennelPreview.setBounds(10, 30 + (nth * 105), 216, 42);
+        panel.add(chennelPreview);
+        
     }
 
     /**
