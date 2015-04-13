@@ -330,8 +330,9 @@ public class BaseUI {
     private void initializeOverlay() {
        SynchronizedChart overlaidChart = cm.generateOverlay();
        ChartPanel cPanel = new ChartPanel(overlaidChart);
-       cPanel.setPreferredSize(new Dimension(800, 500));
-       overlayPanel.add(cPanel, BorderLayout.CENTER);
+       cPanel.setPreferredSize(new Dimension(500, 500));
+       overlayPanel.setLayout(new GridLayout(1, 1));
+       overlayPanel.add(cPanel);
     }
 
     /**
