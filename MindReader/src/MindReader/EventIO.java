@@ -3,6 +3,11 @@ package MindReader;
 import com.opencsv.*;
 import info.monitorenter.gui.chart.ITrace2D;
 
+import info.monitorenter.gui.chart.TracePoint2D;
+import info.monitorenter.gui.chart.IErrorBarPolicy;
+import info.monitorenter.gui.chart.IErrorBarPainter;
+import info.monitorenter.gui.chart.errorbars.ErrorBarPolicyAbsoluteSummation;
+import info.monitorenter.gui.chart.errorbars.ErrorBarPainterLine;
 import java.util.ArrayList;
 import java.util.Date;
 import java.io.IOException;
@@ -10,20 +15,43 @@ import java.io.FileReader;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
+/**
+ * Event file IO object
+ * 
+ * Handles reading data from event files (.txt) and translating
+ * it into a usable channel
+ * 
+ * @author Samantha Sanborn
+ */
 public class EventIO implements FileIO {
+  
+  // parameters
   private ArrayList<Event> events;
   private CSVReader source;
   private ArrayList<ChannelInfo> channels;
   
+  // constructor
   public EventIO() {
-    events = new ArrayList<Event>();
-    channels = new ArrayList<ChannelInfo>();
-    channels.add(new ChannelInfo(0, ChannelType.EVENT, "Events"));
+    // set everything to null
+    events = null;
+    source = null;
+    channels = null;
   }
   
+  /**
+   * Opens a file from a path if there is not already an open file,
+   * verifies it is an event file, and fetches the events
+   * 
+   * @param path file path
+   * 
+   * @throws IOException
+   */
   public void open(String path) throws IOException {
     if (source == null) {
       source = new CSVReader(new FileReader(path), '\t');
+      events = new ArrayList<Event>();
+      channels = new ArrayList<ChannelInfo>();
+      channels.add(new ChannelInfo(0, ChannelType.EVENT, "Events"));
       // check the first line to ensure this file is an event file & get events
       getEvents();
     } else {
@@ -31,16 +59,33 @@ public class EventIO implements FileIO {
     }
   }
   
+  /**
+   * Closes the currently open event file and resets all the data
+   *
+   * @throws IOException
+   */
   public void close() throws IOException {
     if (source != null) {
       source.close();
       source = null;
+      events = null;
+      channels = null;
     } else {
       throw new IOException("No open file.");
     }
   }
   
-  // read
+  /**
+   * Places the event data within the given range onto the given trace
+   * 
+   * @param channel the trace to place events on
+   * @param id channel id (unused)
+   * @param start start point of data requested
+   * @param end end point of data requested
+   * @param freq frequency of data requested (unused)
+   * 
+   * @throws IOException
+   */
   public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException {
     // get the starting date in ms
     long fileStart = events.get(0).timestamp.getTime();
@@ -49,12 +94,33 @@ public class EventIO implements FileIO {
         channel.addPoint(e.eventToPoint(new Date(fileStart)));
       }
     }
+    
+    // set up the trace to look like an event channel (error bars specifically)?
+    if (!channel.showsErrorBars()) {
+      IErrorBarPolicy errors = new ErrorBarPolicyAbsoluteSummation(5, 5);
+      errors.setShowNegativeYErrors(true);
+      errors.setShowPositiveYErrors(true);
+      IErrorBarPainter errorPainter = new ErrorBarPainterLine();
+      errors.setErrorBarPainter(errorPainter);
+      channel.setErrorBarPolicy(errors);
+    }    
+    
   }
   
+  /**
+   * Returns the info for the event channel
+   * 
+   * @throws IOException
+   */
   public ArrayList<ChannelInfo> getChannels() throws IOException {
     return channels;
   }
   
+  /**
+   * Reads the tab-delimited file and extracts event information
+   * 
+   * @throws IOException
+   */
   private void getEvents() throws IOException {
     // variables
     String[] line;
@@ -85,11 +151,14 @@ public class EventIO implements FileIO {
     }
   }
   
+  /**
+   * Gets the time of the last event in the file (if there are events in the file)
+   */
   public long getEndTime() {
-    return 0;
-  }
-  
-  public ArrayList<Event> getEventsForTest() {
-    return events;
+    if (events.size() > 0) {
+      return (long) (events.get(events.size() - 1).eventToPoint(events.get(0).timestamp).getX());
+    } else {
+      return 0;
+    }
   }
 }

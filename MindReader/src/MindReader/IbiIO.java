@@ -23,7 +23,7 @@ public class IbiIO implements FileIO {
   // parameters
   private ArrayList<Integer> data;
   private Point2D[] points;
-  private int startDelay;
+  private long startDelay;
   private long endDelay;
   private CSVReader source;
   private ArrayList<ChannelInfo> channels;
@@ -37,8 +37,6 @@ public class IbiIO implements FileIO {
     startDelay = 0;
     endDelay = 0;
     source = null;
-    channels = new ArrayList<ChannelInfo>();
-    channels.add(new ChannelInfo(0, ChannelType.IBI, "IBI"));
   }
  
   /**
@@ -49,10 +47,16 @@ public class IbiIO implements FileIO {
    * @throws IOException
    */
   public void open(String path) throws IOException {
-    // source is a CSVReader with a tab delimiter
-    source = new CSVReader(new FileReader(path), '\t');
-    
-    getData();
+    if (source == null) { // make sure there's no open file
+      // source is a CSVReader with a tab delimiter
+      source = new CSVReader(new FileReader(path), '\t');
+      channels = new ArrayList<ChannelInfo>();
+      channels.add(new ChannelInfo(0, ChannelType.IBI, "IBI"));
+      getData();
+    } else {
+      // throw an error
+      throw new IOException("Already an open file.");
+    }
   }
 
   /**
@@ -61,7 +65,17 @@ public class IbiIO implements FileIO {
    * @throws IOException
    */
   public void close() throws IOException {
-    source.close();
+    if (source != null) {
+      source.close();
+      data = null;
+      points = null;
+      startDelay = 0;
+      endDelay = 0;
+      source = null;
+      channels = null;
+    } else {
+      throw new IOException("No open file.");
+    }
   }
  
   /**
@@ -76,7 +90,7 @@ public class IbiIO implements FileIO {
    * 
    * @throws IOException
    */
-  public void read(ITrace2D channel, int id, long start, long end, int frequency) throws IOException {
+  public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException {
     for (int i = 0; i < points.length; i++) { // each point
      if (points[i].getX() >= start && points[i].getX() <= end) { // if point is between start and end
        channel.addPoint(new TracePoint2D(Utils.msToSeconds((long) points[i].getX()), points[i].getY())); // add the point to the channel
@@ -172,11 +186,11 @@ public class IbiIO implements FileIO {
    * Converts the list of IBI data to plottable points
    */
   private void dataToPoints() {
-    int sum = startDelay;
+    long sum = startDelay;
     points = new Point2D[data.size()];
     for (int i = 0; i < data.size(); i++) {
       sum += data.get(i);
-      points[i] = new Point(sum, data.get(i));
+      points[i] = new Point((int)sum, data.get(i));
     }
   }
   
@@ -185,8 +199,12 @@ public class IbiIO implements FileIO {
    * 
    * @throws IOException
    */
-  public long getEndTime() throws IOException{
-    double end = points[points.length - 1].getX() + endDelay;
-    return (long) end;
+  public long getEndTime() {
+    if (points.length > 0) {
+      double end = points[points.length - 1].getX() + endDelay;
+      return (long) end;
+    } else {
+      return 0;
+    }
   }
 }

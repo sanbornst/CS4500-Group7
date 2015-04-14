@@ -43,6 +43,20 @@ public interface FileIO {
     public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException;
 
     /**
+     * Reads data from the file into a trace
+     * 
+     * @param channel The jchart2d trace to put data in
+     * @param id The channel ID to read (unique to that file)
+     * @param start the time (in ms from 0) to start reading from
+     * @param end the time (in ms) to stop reading at
+     * @param freq the number of consecutive data points to group together
+     * @param offset value to offset all data points by
+     * 
+     * @throws IOException
+     */
+    public void read(ITrace2D channel, int id, long start, long end, int freq, long offset) throws IOException;
+    
+    /**
      * Gets channel information from the file
      * 
      * @return arrayList containing channelInfo
