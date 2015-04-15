@@ -2,10 +2,14 @@ package UI;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -16,6 +20,7 @@ import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -41,6 +46,8 @@ import info.monitorenter.gui.chart.views.ChartPanel;
  */
 public class BaseUI {
 
+    private final int CHANNELS_TAB = 1;
+
     private JButton btnReset;
     private JFrame frame;
     private JPanel mainPanel;
@@ -51,18 +58,24 @@ public class BaseUI {
     private JTextField endPoint;
     private ChartManager cm;
     private JScrollPane scrollPanel;
-    private boolean isOverlay;
+
+    private List<TogglePanel> togglePanels;
 
     public BaseUI() {
         initializeFrame();
-        cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt", "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
+        // cm = new ChartManager();
+        // for local testing:
+
+        cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",
+                "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
         try {
             initializeCharts();
             initializeOverlay();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            // TODO error handling
+            System.out.println("oops");
         }
+
     }
 
     /**
@@ -88,11 +101,11 @@ public class BaseUI {
         chartPanel = new JPanel();
         overlayPanel = new JPanel();
         scrollPanel = new JScrollPane();
-        scrollPanel.setVerticalScrollBarPolicy(
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanel
+                .setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-        scrollPanel.setHorizontalScrollBarPolicy(
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPanel
+                .setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPanel.setVisible(true);
         JPanel topPanel = new JPanel();
         topPanel.setPreferredSize(new Dimension(900, 60));
@@ -104,7 +117,7 @@ public class BaseUI {
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
         topPanel.setLayout(new FlowLayout());
         overlayPanel.setVisible(false);
-        
+
         // button toggle separate view
         JButton btnSeparate = new JButton("Switch View");
         btnSeparate.setPreferredSize(new Dimension(120, 30));
@@ -139,18 +152,17 @@ public class BaseUI {
         endPoint.setColumns(10);
         endPoint.setPreferredSize(new Dimension(40, 20));
         buttonPanel.add(endPoint);
-        
 
         // button to zoom according to the entered points
         JButton btnZoom = new JButton("zoom");
         btnZoom.setPreferredSize(new Dimension(89, 21));
         buttonPanel.add(btnZoom);
-        
+
         // button to reset zoom percentage
         btnReset = new JButton("Reset");
         btnReset.setPreferredSize(new Dimension(73, 21));
         buttonPanel.add(btnReset);
-        
+
         btnZoom.addMouseListener(new MouseListener() {
 
             @Override
@@ -205,10 +217,10 @@ public class BaseUI {
             }
 
         });
-        
+
     }
 
-    public void initializeSidebar() {
+    private void initializeSidebar() {
         // Tabbed panel
         sidebar = new JTabbedPane(JTabbedPane.TOP);
         sidebar.setPreferredSize(new Dimension(236, frame.getHeight()));
@@ -238,19 +250,15 @@ public class BaseUI {
         JPanel channels = new JPanel();
         // insert channels viewer here
         sidebar.addTab("Channels", null, channels, null);
-        channels.setLayout(null);
-        addChannel(channels, 0);
-        addChannel(channels, 1);
-
         // tab for video viewer
         JPanel video = new JPanel();
         // insert video viewer here
         sidebar.addTab("Video", null, video, null);
 
     }
-    
+
     /**
-     *  Swaps the chart & overlay panels
+     * Swaps the chart & overlay panels
      */
     private void swapChartPanels() {
 
@@ -265,18 +273,19 @@ public class BaseUI {
             scrollPanel.setVisible(true);
             mainPanel.add(scrollPanel, BorderLayout.CENTER);
         }
-        
+
         frame.revalidate();
-        //revalidate and repaint
+        // revalidate and repaint
         mainPanel.revalidate();
         scrollPanel.revalidate();
         overlayPanel.revalidate();
         mainPanel.repaint();
-        
+
     }
 
     /**
-     * called when a user selects a mindware file, loads the file and updates the charts
+     * called when a user selects a mindware file, loads the file and updates
+     * the charts
      * 
      * @param filename
      */
@@ -312,6 +321,7 @@ public class BaseUI {
         scrollPanel.revalidate();
         chartPanel.revalidate();
         overlayPanel.revalidate();
+        chartPanel.repaint();
     }
 
     /**
@@ -325,69 +335,107 @@ public class BaseUI {
         List<SynchronizedChart> charts = cm.generateCharts();
 
         // now add those charts to panels
-        List<ChartPanel> cPanels = new ArrayList<ChartPanel>();
+        togglePanels = new ArrayList<TogglePanel>();
         for (SynchronizedChart chart : charts) {
             ChartPanel tmpPanel = new ChartPanel(chart);
-            tmpPanel.setPreferredSize(new Dimension(200, ChartManager.MINIMUM_CHART_HEIGHT));
-            cPanels.add(tmpPanel);
+            tmpPanel.setPreferredSize(new Dimension(200,
+                    ChartManager.MINIMUM_CHART_HEIGHT));
+            TogglePanel tPanel = new TogglePanel(tmpPanel, true);
+            togglePanels.add(tPanel);
+            addChannel((JPanel) sidebar.getComponentAt(CHANNELS_TAB), tPanel);
         }
 
-        chartPanel.setLayout(new GridLayout(charts.size(), 1));
-        // and add those chart panels to the main chart container
-        for (ChartPanel panel : cPanels) {
-            chartPanel.add(panel);
-        }
+        addChartsToPanel(togglePanels);
 
         // be very very quiet... we're hunting zooms
         this.setZoomListener(new ZoomOutAdapter(cm));
         scrollPanel.setViewportView(chartPanel);
         scrollPanel.revalidate();
     }
-    
-    private void initializeOverlay() {
-       SynchronizedChart overlaidChart = cm.generateOverlay();
-       ChartPanel cPanel = new ChartPanel(overlaidChart);
-       cPanel.setPreferredSize(new Dimension(500, 500));
-       overlayPanel.setLayout(new GridLayout(1, 1));
-       overlayPanel.add(cPanel);
+
+    private void addChartsToPanel(List<TogglePanel> chartPanels) {
+        chartPanel.setLayout(new GridLayout(chartPanels.size(), 1));
+        // and add those chart panels to the main chart container
+        for (TogglePanel panel : chartPanels) {
+            if (panel.isVisible()) {
+                chartPanel.add(panel.getPanel());
+            }
+        }
+        chartPanel.revalidate();
+        chartPanel.repaint();
     }
-    
+
+    private void initializeOverlay() {
+        SynchronizedChart overlaidChart = cm.generateOverlay();
+        ChartPanel cPanel = new ChartPanel(overlaidChart);
+        cPanel.setPreferredSize(new Dimension(500, 500));
+        overlayPanel.setLayout(new GridLayout(1, 1));
+        overlayPanel.add(cPanel);
+    }
+
     // method to add channels to channelView tab
     // maybe need more variables from reading channels...
-    private void addChannel(JPanel panel, int nth){
-        
-        JLabel lblChennalPreview = new JLabel("Channel 1");
-        lblChennalPreview.setBounds(10, 7 + (nth * 105), 61, 18);
-        panel.add(lblChennalPreview);
-        
-        JCheckBox chckbxShow = new JCheckBox("Show");
-        chckbxShow.setBounds(165, 7 + (nth * 105), 61, 18);
-        // add listener here to toggle
-        panel.add(chckbxShow);
-        
-        // drop down menu for color selection
-        JComboBox colorSelector = new JComboBox();
-        colorSelector.setBounds(10, 76 + (nth * 105), 216, 20);
-        colorSelector.addItem("red");
-        colorSelector.addItem("green");
-        colorSelector.addItem("blue");
-        colorSelector.addItem("cyan");
-        colorSelector.addItem("yellow");
-        colorSelector.addItem("magenta");
-        colorSelector.addItem("black");
-        colorSelector.addActionListener(new ActionListener() {
-            // add action here to change color
-            public void actionPerformed(ActionEvent arg0) {
+    private void addChannel(JPanel panel, TogglePanel togglePanel) {
+
+        ChartPanel chartPanel = togglePanel.getPanel();
+        JPanel formatPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.gridx = 0;     
+        c.gridwidth = 1; 
+        c.gridy = 0; 
+        c.insets = new Insets(0, 10, 0, 0);
+        JLabel lblChannel = new JLabel(chartPanel.getChart().getName() + ":");
+        formatPanel.add(lblChannel, c);
+
+        JPanel btnPanel = new JPanel();
+        JButton colorPicker = new JButton("Choose color");
+
+        btnPanel.add(colorPicker);
+        JButton toggle = new JButton("Toggle");
+        final TogglePanel tp = togglePanel;
+        toggle.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleChart(tp);
+            }
+
+        });
+        colorPicker.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Color color = JColorChooser.showDialog(frame, "Choose a color",
+                        Color.blue);
+                tp.setColor(color);
             }
         });
-        panel.add(colorSelector);
-        
-        // panel for preview of channel
-        JPanel chennelPreview = new JPanel();
-        chennelPreview.setBackground(Color.WHITE);
-        chennelPreview.setBounds(10, 30 + (nth * 105), 216, 42);
-        panel.add(chennelPreview);
-        
+
+        btnPanel.add(toggle);
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.ipady = 0;    
+        c.gridx = 0;       
+        c.gridwidth = 3;  
+        c.gridy = 1;       
+        c.insets = new Insets(0, 0, 0, 0);
+        formatPanel.add(btnPanel, c);
+
+        panel.add(formatPanel);
+
+    }
+
+    /**
+     * If the given <code>ChartPanel</code> is showing in the frame, remove it.
+     * Otherwise, add it.
+     * 
+     * @param cPanel
+     *            the <code>ChartPanel</code> to add/remove
+     */
+    private void toggleChart(TogglePanel tPanel) {
+        tPanel.toggleVisibility();
+        chartPanel.removeAll();
+        addChartsToPanel(togglePanels);
+
     }
 
     /**
@@ -403,4 +451,60 @@ public class BaseUI {
     public void display() {
         this.frame.setVisible(true);
     }
+
+    /**
+     * helper class to keep track of panels and their toggle state
+     * 
+     * @author jordanreedie
+     * 
+     */
+    class TogglePanel {
+
+        private ChartPanel panel;
+        private boolean visible;
+
+        public TogglePanel(ChartPanel panel, boolean visible) {
+            this.panel = panel;
+            this.visible = visible;
+        }
+
+        public void toggleVisibility() {
+            this.visible = !this.visible;
+        }
+
+        /**
+         * @return the panel
+         */
+        public ChartPanel getPanel() {
+            return panel;
+        }
+
+        /**
+         * @return the visible
+         */
+        public boolean isVisible() {
+            return visible;
+        }
+
+        /**
+         * @param panel
+         *            the panel to set
+         */
+        public void setPanel(ChartPanel panel) {
+            this.panel = panel;
+        }
+
+        /**
+         * @param visible
+         *            the visible to set
+         */
+        public void setVisible(boolean visible) {
+            this.visible = visible;
+        }
+
+        public void setColor(Color color) {
+            panel.getChart().getTraces().first().setColor(color);
+        }
+    }
+
 }
