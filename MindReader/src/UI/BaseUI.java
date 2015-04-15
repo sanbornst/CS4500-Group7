@@ -65,7 +65,7 @@ public class BaseUI {
         initializeFrame();
         // cm = new ChartManager();
         // for local testing:
-
+         
         cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",
                 "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
         try {
@@ -306,9 +306,9 @@ public class BaseUI {
      */
     private void updateCharts() {
 
-        scrollPanel.removeAll();
         chartPanel.removeAll();
         overlayPanel.removeAll();
+        togglePanels = new ArrayList<TogglePanel>();
         try {
             this.initializeCharts();
             this.initializeOverlay();
