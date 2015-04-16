@@ -135,22 +135,14 @@ public class ChartManager {
         }
 
         List<SynchronizedChart> charts = new ArrayList<SynchronizedChart>();
-
-        // keep track of the previous chart so we can sync to it
-        SynchronizedChart lastChart = null;
         
         for (SynchronizedChart chart : mwCharts) {
-            // if we have a chart to sync do, do so.
-            if (lastChart != null){ chart.setSynchronizedXStartChart(lastChart); }
             charts.add(chart);
             // add the ibi chart after the ecg
             if (chart.getTraces().first().getName().contains("ECG")
                     && this.iChart != null) {
                 charts.add(this.iChart);
             }
-            
-            // keep track of the previous chart
-            lastChart = chart;
         }
 
         // event chart comes last
@@ -163,6 +155,22 @@ public class ChartManager {
             chart.setFriends(charts);
             chart.setFocusable(true);
         }
+        
+        // sync all charts together so that they display uniformly
+
+        SynchronizedChart previousChart = null;
+        
+        for (SynchronizedChart chart : charts){
+            // if we have a chart to sync to, do so
+            if (previousChart != null){
+                chart.setSynchronizedXStartChart(previousChart);
+                }
+            
+            // keep track of the previous chart in the chain
+            previousChart = chart;
+        }
+        
+        
 
         // my charts!
         this.allCharts = charts;
