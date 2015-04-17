@@ -207,4 +207,10 @@ public class IbiIO implements FileIO {
       return 0;
     }
   }
+
+@Override
+public boolean isOpen() {
+    return source != null;
+}
+
 }

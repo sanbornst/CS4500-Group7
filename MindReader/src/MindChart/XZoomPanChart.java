@@ -268,6 +268,7 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
      * kinda bad)
      */
     public void normalizeAxisY() {
+        //TODO needs a bit o' tweaking
         double max = this.getTraces().first().getMaxY();
         double min = this.getTraces().first().getMinY();
         max += max * (max > 0 ? 0.2 : -0.2);

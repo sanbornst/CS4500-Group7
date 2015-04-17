@@ -5,6 +5,7 @@ import info.monitorenter.gui.chart.traces.Trace2DSorted;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.rmi.NoSuchObjectException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,9 @@ import MindReader.Utils;
  */
 public class ChartManager {
 
+    /**
+     * Minimum chart height, in pixels
+     */
     public static int MINIMUM_CHART_HEIGHT = 200;
 
     private final int START = 0;
@@ -118,35 +122,20 @@ public class ChartManager {
      */
     public List<SynchronizedChart> generateCharts() throws IOException {
 
-        this.mwCharts = generateMwCharts();
-        try {
-            this.eChart = generateEventChart();
-        } catch (NullPointerException e) {
-            // TODO temporary holdover 
-            // we drop for now
-            // would like an isOpen method on the fileIO perhaps
-            this.eChart = null;
-        }
-        try {
-            this.iChart = generateIbiChart();
-        } catch (NullPointerException e) {
-            // TODO see above
-            this.iChart = null;
-        }
-
         List<SynchronizedChart> charts = new ArrayList<SynchronizedChart>();
+        if (this.bio.isOpen()) {
+            this.mwCharts = generateMwCharts();
+            charts.addAll(this.mwCharts);
 
-        for (SynchronizedChart chart : mwCharts) {
-            charts.add(chart);
-            // add the ibi chart after the ecg
-            if (chart.getTraces().first().getName().contains("ECG")
-                    && this.iChart != null) {
-                charts.add(this.iChart);
-            }
         }
 
+        if (this.ibio.isOpen()) {
+            this.iChart = generateIbiChart();
+            insertAfterECG(this.iChart, charts);
+        }
         // event chart comes last
-        if (this.eChart != null) {
+        if (this.eio.isOpen()) {
+            this.eChart = generateEventChart();
             charts.add(eChart);
         }
 
@@ -156,12 +145,42 @@ public class ChartManager {
             chart.setFocusable(true);
         }
 
+        for (int i = 1; i < charts.size(); i++) {
+            charts.get(i).setSynchronizedXStartChart(charts.get(i - 1));
+        }
+
         // my charts!
         this.allCharts = charts;
         normalizeCharts();
         return this.allCharts;
     }
+    
+    /**
+     * Insert <code>toInsert</code> after the ECG chart in <code>charts</code>
+     * @param toInsert the chart to insert
+     * @param charts to list of charts to insert into
+     */
+    private void insertAfterECG(SynchronizedChart toInsert, List<SynchronizedChart> charts) {
 
+        int initialSize = charts.size();
+        for (int i = 0; i < initialSize; i++) {
+            if (charts.get(i).getName().contains("ECG")) {
+                charts.add(i + 1, toInsert);
+            }
+        }
+       
+        // if the ibi chart never got inserted, do it now
+        if (charts.size() == initialSize) {
+            charts.add(toInsert);
+        }
+    }
+
+    /**
+     * Generate charts from the currently open MindWare (.mw) file
+     * 
+     * @return
+     * @throws IOException
+     */
     private List<SynchronizedChart> generateMwCharts() throws IOException {
         ArrayList<ChannelInfo> channels = bio.getChannels();
         List<ITrace2D> traces = new ArrayList<ITrace2D>();
@@ -186,6 +205,9 @@ public class ChartManager {
         return charts;
     }
 
+    /**
+     * call the normalizeAxisY method on all charts
+     */
     private void normalizeCharts() {
         for (SynchronizedChart chart : allCharts) {
             chart.normalizeAxisY();
@@ -233,10 +255,17 @@ public class ChartManager {
      * Generate the overlay chart
      * 
      * @return
+     * @throws NoSuchObjectException 
      */
-    public SynchronizedChart generateOverlay() {
+    public SynchronizedChart generateOverlay() throws NoSuchObjectException {
+        
+        if (this.mwCharts == null || this.mwCharts.size() == 0) {
+            throw new NoSuchObjectException("Mindware File has not been read yet!"); 
+        }
         SynchronizedChart overlay = new SynchronizedChart();
 
+        // only use mw charts for the overlay, as the ibi & event files throw
+        // off the scale
         for (SynchronizedChart chart : mwCharts) {
             overlay.addTrace(chart.getTraces().first());
         }
@@ -284,7 +313,7 @@ public class ChartManager {
      * @param path
      * @throws IOException
      */
-    public void setMwPath(String path) throws IOException {
+    public void openMwFile(String path) throws IOException {
         if (bio.isOpen()) {
             bio.close();
         }
@@ -292,12 +321,11 @@ public class ChartManager {
         bio.open(path);
     }
 
-    public void setIbiPath(String path) throws IOException {
+    public void openIbiFile(String path) throws IOException {
         try {
             ibio.close();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            // eat it.
         }
 
         ibio = new IbiIO();
@@ -305,7 +333,13 @@ public class ChartManager {
 
     }
 
-    public void setEventPath(String path) throws IOException {
+    /**
+     * Opens the given path to the event file
+     * 
+     * @param path
+     * @throws IOException
+     */
+    public void openEventFile(String path) throws IOException {
         try {
             eio.close();
         } catch (IOException e) {
@@ -317,6 +351,9 @@ public class ChartManager {
         eio.open(path);
     }
 
+    /**
+     * for the hell of it
+     */
     private void initializeColors() {
         colors = new ArrayList<Color>();
         colors.add(Color.BLUE);

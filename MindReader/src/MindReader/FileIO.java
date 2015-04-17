@@ -28,6 +28,14 @@ public interface FileIO {
      * @throws IOException
      */
     public void close() throws IOException;
+    
+    /**
+     * Is the file open?
+     * 
+     * @return <code>true</code> if the file is open,
+     * <code>false</code> otherwise
+     */
+    public boolean isOpen();
 
     /**
      * Reads data from the file into a trace

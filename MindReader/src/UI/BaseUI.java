@@ -15,6 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
+import java.rmi.NoSuchObjectException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,18 +64,15 @@ public class BaseUI {
 
     public BaseUI() {
         initializeFrame();
-        // cm = new ChartManager();
+        cm = new ChartManager();
         // for local testing:
-         
-        cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",
-                "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
-        try {
-            initializeCharts();
-            initializeOverlay();
-        } catch (IOException e) {
-            // TODO error handling
-            System.out.println("oops");
-        }
+
+        /*
+         * cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",;
+         * "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt"); try {
+         * initializeCharts(); initializeOverlay(); } catch (IOException e) { //
+         * TODO error handling System.out.println("oops"); }
+         */
 
     }
 
@@ -107,15 +105,18 @@ public class BaseUI {
         scrollPanel
                 .setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPanel.setVisible(true);
+
+        // hold the top buttons (for now, just switch view)
         JPanel topPanel = new JPanel();
         topPanel.setPreferredSize(new Dimension(900, 60));
+
         // holds the bottom buttons (zoom, zoom out, etc)
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setPreferredSize(new Dimension(0, 40));
+
         mainPanel.add(scrollPanel, BorderLayout.CENTER);
         mainPanel.add(topPanel, BorderLayout.NORTH);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        topPanel.setLayout(new FlowLayout());
         overlayPanel.setVisible(false);
 
         // button toggle separate view
@@ -128,7 +129,9 @@ public class BaseUI {
             }
         });
 
+        topPanel.setLayout(new FlowLayout());
         topPanel.add(btnSeparate);
+
         // button toggle separate view
         JPanel buttonPanel = new JPanel();
         bottomPanel.add(buttonPanel, BorderLayout.WEST);
@@ -228,16 +231,20 @@ public class BaseUI {
         // tab of file viewer
         JPanel fileViewer = new JPanel();
         sidebar.addTab("File", null, fileViewer, null);
-        fileViewer.setLayout(new BorderLayout());
+        fileViewer.setLayout(new FlowLayout());
 
         // add the file selector to the tabbed pane
-        JLabel lblBinaryFiles = new JLabel("Binary Files");
+        JLabel lblBinaryFiles = new JLabel("File Selectors:");
         lblBinaryFiles.setBounds(10, 11, 64, 14);
         fileViewer.add(lblBinaryFiles, BorderLayout.NORTH);
         final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.addActionListener(new ActionListener() {
+        final JButton mwFileButton = new JButton("Select Binary File");
+        mwFileButton.setPreferredSize(new Dimension(170, 30));
+        mwFileButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
+                int result = fileChooser.showOpenDialog(mwFileButton);
+
+                if (result == JFileChooser.APPROVE_OPTION) {
                     System.out.println("File selected: "
                             + fileChooser.getSelectedFile());
                     mwFileSelected(fileChooser.getSelectedFile()
@@ -245,7 +252,37 @@ public class BaseUI {
                 }
             }
         });
-        fileViewer.add(fileChooser, BorderLayout.CENTER);
+        final JButton eventFileButton = new JButton("Select Event File");
+        eventFileButton.setPreferredSize(new Dimension(170, 30));
+        eventFileButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int result = fileChooser.showOpenDialog(eventFileButton);
+
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    System.out.println("File selected: "
+                            + fileChooser.getSelectedFile());
+                    eventFileSelected(fileChooser.getSelectedFile()
+                            .getAbsolutePath());
+                }
+            }
+        });
+        final JButton ibiFileButton = new JButton("Select IBI File");
+        ibiFileButton.setPreferredSize(new Dimension(170, 30));
+        ibiFileButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int result = fileChooser.showOpenDialog(ibiFileButton);
+
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    System.out.println("File selected: "
+                            + fileChooser.getSelectedFile());
+                    ibiFileSelected(fileChooser.getSelectedFile()
+                            .getAbsolutePath());
+                }
+            }
+        });
+        fileViewer.add(mwFileButton);
+        fileViewer.add(ibiFileButton);
+        fileViewer.add(eventFileButton);
         // tab for Channels viewer
         JPanel channels = new JPanel();
         // insert channels viewer here
@@ -292,11 +329,32 @@ public class BaseUI {
     private void mwFileSelected(String filename) {
 
         try {
-            cm.setMwPath(filename);
+            cm.openMwFile(filename);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error opening file: "
-                    + filename);
+                    + filename + "\nPlease make sure you selected the correct file");
             e.printStackTrace();
+        }
+        updateCharts();
+    }
+
+    private void eventFileSelected(String filename) {
+        try {
+            cm.openEventFile(filename);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error opening file: "
+                    + filename + "\nPlease make sure you selected the correct file");
+        }
+        updateCharts();
+
+    }
+
+    private void ibiFileSelected(String filename) {
+        try {
+            cm.openIbiFile(filename);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error opening file: "
+                    + filename + "\nPlease make sure you selected the correct file");
         }
         updateCharts();
     }
@@ -366,24 +424,28 @@ public class BaseUI {
     }
 
     private void initializeOverlay() {
-        SynchronizedChart overlaidChart = cm.generateOverlay();
+        SynchronizedChart overlaidChart;
+        try {
+            overlaidChart = cm.generateOverlay();
+        } catch(NoSuchObjectException e) {
+            return;
+        }
         ChartPanel cPanel = new ChartPanel(overlaidChart);
         cPanel.setPreferredSize(new Dimension(500, 500));
         overlayPanel.setLayout(new GridLayout(1, 1));
         overlayPanel.add(cPanel);
     }
 
-    // method to add channels to channelView tab
-    // maybe need more variables from reading channels...
     private void addChannel(JPanel panel, TogglePanel togglePanel) {
 
         ChartPanel chartPanel = togglePanel.getPanel();
         JPanel formatPanel = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
+        // Grid Bags. Fun.
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridx = 0;     
-        c.gridwidth = 1; 
-        c.gridy = 0; 
+        c.gridx = 0;
+        c.gridwidth = 1;
+        c.gridy = 0;
         c.insets = new Insets(0, 10, 0, 0);
         JLabel lblChannel = new JLabel(chartPanel.getChart().getName() + ":");
         formatPanel.add(lblChannel, c);
@@ -412,14 +474,22 @@ public class BaseUI {
         });
 
         btnPanel.add(toggle);
+
+        c = new GridBagConstraints();
+        JButton exportButton = new JButton("export");
         c.fill = GridBagConstraints.HORIZONTAL;
-        c.ipady = 0;    
-        c.gridx = 0;       
-        c.gridwidth = 3;  
-        c.gridy = 1;       
+        c.ipady = 0;
+        c.gridx = 0;
+        c.gridwidth = 3;
+        c.gridy = 1;
         c.insets = new Insets(0, 0, 0, 0);
         formatPanel.add(btnPanel, c);
 
+        c = new GridBagConstraints();
+        c.gridy = 2;
+        c.gridwidth = 1;
+        c.gridx = 0;
+        formatPanel.add(exportButton, c);
         panel.add(formatPanel);
 
     }
@@ -448,6 +518,9 @@ public class BaseUI {
         btnReset.addActionListener(l);
     }
 
+    /**
+     * As named.
+     */
     public void display() {
         this.frame.setVisible(true);
     }
@@ -502,6 +575,11 @@ public class BaseUI {
             this.visible = visible;
         }
 
+        /**
+         * sets the color of the chart
+         * 
+         * @param color
+         */
         public void setColor(Color color) {
             panel.getChart().getTraces().first().setColor(color);
         }

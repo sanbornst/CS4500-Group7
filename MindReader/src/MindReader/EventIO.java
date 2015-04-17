@@ -161,4 +161,10 @@ public class EventIO implements FileIO {
       return 0;
     }
   }
+
+@Override
+public boolean isOpen() {
+    return source != null;
+}
+
 }
