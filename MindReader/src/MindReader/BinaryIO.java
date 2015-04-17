@@ -385,6 +385,7 @@ public class BinaryIO implements FileIO {
         // points / scanRate = points / second, points/second * 1000 = points/ms
         return (long) Math.floor(points / this.scanRate * 1000);
     }
+    
     /**
      * Converts points per channel into a frequency
      * 

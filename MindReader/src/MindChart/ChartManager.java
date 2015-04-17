@@ -142,9 +142,9 @@ public class ChartManager {
         // this looks weird, i know, but bear with me
         for (SynchronizedChart chart : charts) {
             chart.setFriends(charts);
-            chart.setFocusable(true);
         }
 
+        // sync each chart with the previous chart in the list
         for (int i = 1; i < charts.size(); i++) {
             charts.get(i).setSynchronizedXStartChart(charts.get(i - 1));
         }
@@ -154,13 +154,17 @@ public class ChartManager {
         normalizeCharts();
         return this.allCharts;
     }
-    
+
     /**
      * Insert <code>toInsert</code> after the ECG chart in <code>charts</code>
-     * @param toInsert the chart to insert
-     * @param charts to list of charts to insert into
+     * 
+     * @param toInsert
+     *            the chart to insert
+     * @param charts
+     *            to list of charts to insert into
      */
-    private void insertAfterECG(SynchronizedChart toInsert, List<SynchronizedChart> charts) {
+    private void insertAfterECG(SynchronizedChart toInsert,
+            List<SynchronizedChart> charts) {
 
         int initialSize = charts.size();
         for (int i = 0; i < initialSize; i++) {
@@ -168,7 +172,7 @@ public class ChartManager {
                 charts.add(i + 1, toInsert);
             }
         }
-       
+
         // if the ibi chart never got inserted, do it now
         if (charts.size() == initialSize) {
             charts.add(toInsert);
@@ -255,12 +259,13 @@ public class ChartManager {
      * Generate the overlay chart
      * 
      * @return
-     * @throws NoSuchObjectException 
+     * @throws NoSuchObjectException
      */
     public SynchronizedChart generateOverlay() throws NoSuchObjectException {
-        
+
         if (this.mwCharts == null || this.mwCharts.size() == 0) {
-            throw new NoSuchObjectException("Mindware File has not been read yet!"); 
+            throw new NoSuchObjectException(
+                    "Mindware File has not been read yet!");
         }
         SynchronizedChart overlay = new SynchronizedChart();
 

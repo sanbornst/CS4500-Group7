@@ -101,6 +101,9 @@ public class BaseUI {
         scrollPanel = new JScrollPane();
         scrollPanel
                 .setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        
+        scrollPanel
+                .getVerticalScrollBar().setUnitIncrement(8);
 
         scrollPanel
                 .setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -395,6 +398,7 @@ public class BaseUI {
         // now add those charts to panels
         togglePanels = new ArrayList<TogglePanel>();
         for (SynchronizedChart chart : charts) {
+            
             ChartPanel tmpPanel = new ChartPanel(chart);
             tmpPanel.setPreferredSize(new Dimension(200,
                     ChartManager.MINIMUM_CHART_HEIGHT));
