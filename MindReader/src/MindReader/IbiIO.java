@@ -87,13 +87,31 @@ public class IbiIO implements FileIO {
    * @param start starting point for the requested data
    * @param end ending point for the requested data
    * @param frequency the frequency of read data
+   * @param offset y offset of the data
    * 
    * @throws IOException
    */
   public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException {
+    read(channel, id, start, end, freq, 0);
+  }
+  
+  /**
+   * Reads the data in the open file and plots it, starting from the start point
+   * and ending at the end point (id, and frequency are unimportant to IBI reading)
+   * 
+   * @param channel the trace to plot to
+   * @param id the channel id
+   * @param start starting point for the requested data
+   * @param end ending point for the requested data
+   * @param frequency the frequency of read data
+   * @param offset y offset of the data
+   * 
+   * @throws IOException
+   */
+  public void read(ITrace2D channel, int id, long start, long end, int freq, long offset) throws IOException {
     for (int i = 0; i < points.length; i++) { // each point
      if (points[i].getX() >= start && points[i].getX() <= end) { // if point is between start and end
-       channel.addPoint(new TracePoint2D(Utils.msToSeconds((long) points[i].getX()), points[i].getY())); // add the point to the channel
+       channel.addPoint(new TracePoint2D(Utils.msToSeconds((long) points[i].getX()), points[i].getY() + offset)); // add the point to the channel
      } else if (points[i].getX() > end) { // as soon as we get past the end of the data (since points is in order)
        break;
      }

@@ -87,11 +87,30 @@ public class EventIO implements FileIO {
    * @throws IOException
    */
   public void read(ITrace2D channel, int id, long start, long end, int freq) throws IOException {
+    read(channel, id, start, end, freq, 0);
+  }
+  
+  /**
+   * Places the event data within the given range onto the given trace
+   * 
+   * @param channel the trace to place events on
+   * @param id channel id (unused)
+   * @param start start point of data requested
+   * @param end end point of data requested
+   * @param freq frequency of data requested (unused)
+   * @param offset y offset of data
+   * 
+   * @throws IOException
+   */
+  public void read(ITrace2D channel, int id, long start, long end, int freq, long offset) throws IOException {
     // get the starting date in ms
     long fileStart = events.get(0).timestamp.getTime();
+    TracePointString p = null;
     for (Event e : events) {
       if (e.timestamp.getTime() - fileStart >= start && e.timestamp.getTime() - fileStart <= end) { // point is in requested section
-        channel.addPoint(e.eventToPoint(new Date(fileStart)));
+        p = e.eventToPoint(new Date(fileStart));
+        p.setLocation(p.getX(), p.getY() + offset);
+        channel.addPoint(p);
       }
     }
     
