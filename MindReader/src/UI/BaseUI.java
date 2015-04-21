@@ -54,19 +54,89 @@ import info.monitorenter.gui.chart.views.ChartPanel;
  */
 public class BaseUI {
 
+
+    
+    /**
+     * overview of the UI:
+     * ______________________
+     * |     |______________| <-- top bar    } \
+     * |     |              |                }  \
+     * | side|     charts   |                }   |  <- main panel
+     * |     |______________|                }  /
+     * |     |              | <-- bottom bar } /
+     * ----------------------
+     * 'side' has the file pickers & channel toggle options
+     * 'top' has the view switcher and resolution indicator
+     * 'charts' holds the charts & overlay view
+     * 'bottom' holds the manual zoom specifier and the reset buttons 
+     * 'main panel' holds the top, charts, and bottom panels
+     */
+
+    // There's a lot of instance variables here. I'd like to be able to clean this up,
+    // but don't have the time
+
+    /**
+     * The number of the Channels tab in the sidebar,
+     * used for selecting the tab
+     */
     private final int CHANNELS_TAB = 1;
 
+    /**
+     * The button that resets the zoom level
+     */
     private JButton btnReset;
+    
+    /**
+     * The main frame that contains everything
+     */
     private JFrame frame;
+    
+    /**
+     * the main panel in the UI, holds the chart, top bar, and bottom bar panels 
+     */
     private JPanel mainPanel;
+    
+    /**
+     * holds the scroll panel that holds the charts
+     */
     private JPanel chartPanel;
+
+    /**
+     * holds the overlay chart
+     */
     private JPanel overlayPanel;
+
+    /**
+     * the sidebar holds the filepickers and channel toggle panels
+     */
     private JTabbedPane sidebar;
+
+    /**
+     * the text field users enter their desired starting point in 
+     * for the manual zoom
+     */
     private JTextField startPoint;
+
+    /**
+     * the text field users enter their desired ending point in 
+     * for the manual zoom
+     */
     private JTextField endPoint;
+    
+    /**
+     * The chartmanager instance used to manage charts
+     */
     private ChartManager cm;
+    
+    /**
+     * The scrollpane that holds all the charts
+     */
     private JScrollPane scrollPanel;
 
+    /**
+     * The list of ChartPanels currently in the UI, wrapped in toggle panels
+     * to keep track of which is visible
+     */
     private List<TogglePanel> togglePanels;
 
     public BaseUI() {
@@ -109,6 +179,7 @@ public class BaseUI {
         chartPanel = new JPanel();
         overlayPanel = new JPanel();
         scrollPanel = new JScrollPane();
+        // some scroll panel magic
         scrollPanel
                 .setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
@@ -118,7 +189,7 @@ public class BaseUI {
                 .setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPanel.setVisible(true);
 
-        // hold the top buttons (for now, just switch view)
+        // holds the top buttons (for now, just switch view)
         JPanel topPanel = new JPanel();
         topPanel.setPreferredSize(new Dimension(900, 60));
 
@@ -137,7 +208,6 @@ public class BaseUI {
         btnSeparate.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
                 // swap 'em
-                swapChartPanels();
             }
         });
 
@@ -503,26 +573,9 @@ public class BaseUI {
 
         final JButton exportButton = new JButton("export");
                     Chart2DActionSaveImageSingleton f = Chart2DActionSaveImageSingleton.getInstance(tp.getPanel().getChart(), "save");
+                    
         exportButton.addActionListener(f);
-                
-                new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    int imageWidth = 1424;
-                    int imageHeight = 768;
-                    JFileChooser fc = new JFileChooser();
-                    fc.showSaveDialog(exportButton);
-                    BufferedImage s = tp.getPanel().getChart().snapShot(imageWidth,
-                            imageHeight);
-                    ImageIO.write(s, "bmp", fc.getSelectedFile());
-                } catch (Exception ex) {
-                    System.out.println("Unable to create image: " + e);
-                }
-            }
-
-        };
+        exportButton.setPreferredSize(new Dimension(126, 30));
         c = new GridBagConstraints();
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridy = 2;

@@ -17,28 +17,73 @@ import MindReader.Utils;
 
 /**
  * Class to manage & create charts from <code>ITrace2D</code>s
- * 
+ *
  * @author jordanreedie
- * 
  */
 public class ChartManager {
+
+    // There's a lot of instance variables here. I'd like to be able to clean
+    // this up,
+    // but don't have the time
 
     /**
      * Minimum chart height, in pixels
      */
     public static int MINIMUM_CHART_HEIGHT = 200;
 
+    /**
+     * The start value for reading data
+     */
     private final int START = 0;
+
+    /**
+     * The mindware file reader
+     */
     private BinaryIO bio;
+
+    /**
+     * The Event file reader
+     */
     private EventIO eio;
+
+    /**
+     * The IBI file reader
+     */
     private IbiIO ibio;
+
+    /**
+     * List of colors for chart initialization
+     */
     private List<Color> colors;
+
+    /**
+     * The list of charts created from the mindware file
+     */
     private List<SynchronizedChart> mwCharts;
+
+    /**
+     * The chart created from the event file
+     */
     private SynchronizedChart eChart;
+
+    /**
+     * The chart created from the IBI file
+     */
     private SynchronizedChart iChart;
+
+    /**
+     * The combined list of all charts, in the correct order
+     */
     private List<SynchronizedChart> allCharts;
+
+    /**
+     * <code>true</code> if the data has been reloaded at a higher resolution
+     */
     private boolean reloaded = false;
 
+    /**
+     * The number of points per channel to have on screen at one time
+     */
     private int NUM_POINTS = 30000;
 
     public ChartManager() {
@@ -87,7 +132,7 @@ public class ChartManager {
 
     /**
      * Set range of charts
-     * 
+     *
      * @param start
      *            start time, in seconds
      * @param end
@@ -116,7 +161,7 @@ public class ChartManager {
 
     /**
      * Generates a list of charts
-     * 
+     *
      * @return the generated list of charts
      * @throws IOException
      */
@@ -157,7 +202,7 @@ public class ChartManager {
 
     /**
      * Insert <code>toInsert</code> after the ECG chart in <code>charts</code>
-     * 
+     *
      * @param toInsert
      *            the chart to insert
      * @param charts
@@ -181,7 +226,7 @@ public class ChartManager {
 
     /**
      * Generate charts from the currently open MindWare (.mw) file
-     * 
+     *
      * @return
      * @throws IOException
      */
@@ -220,7 +265,7 @@ public class ChartManager {
 
     /**
      * Generate the event chart
-     * 
+     *
      * @return
      * @throws IOException
      */
@@ -239,7 +284,7 @@ public class ChartManager {
 
     /**
      * Generate the IBI chart
-     * 
+     *
      * @return
      * @throws IOException
      */
@@ -257,7 +302,7 @@ public class ChartManager {
 
     /**
      * Generate the overlay chart
-     * 
+     *
      * @return
      * @throws NoSuchObjectException
      */
@@ -280,7 +325,7 @@ public class ChartManager {
 
     /**
      * Generate charts from a list of <code>ITrace2D</code>s.
-     * 
+     *
      * @param traces
      *            The data to generate the charts from
      * @return synchronized charts from the provided traces
@@ -300,7 +345,7 @@ public class ChartManager {
 
     /**
      * Generate a single synchronizable chart from an <code>ITrace2D</code>.
-     * 
+     *
      * @param data
      *            the trace with which to generate the chart
      * @return the generated, synchronizable chart
@@ -313,9 +358,10 @@ public class ChartManager {
     }
 
     /**
-     * Sets the path to the data file    
-     * 
+     * Opens the given path to the MindWare file
+     *
      * @param path
+     *            the filepath to open
      * @throws IOException
      */
     public void openMwFile(String path) throws IOException {
@@ -326,6 +372,13 @@ public class ChartManager {
         bio.open(path);
     }
 
+    /**
+     * Opens the given path to the IBI file
+     *
+     * @param path
+     *            the filepath to open
+     * @throws IOException
+     */
     public void openIbiFile(String path) throws IOException {
         try {
             ibio.close();
@@ -340,7 +393,7 @@ public class ChartManager {
 
     /**
      * Opens the given path to the event file
-     * 
+     *
      * @param path
      * @throws IOException
      */

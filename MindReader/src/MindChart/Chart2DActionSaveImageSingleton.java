@@ -140,9 +140,11 @@ public final class Chart2DActionSaveImageSingleton
    */
   public void actionPerformed(final ActionEvent e) {
     Dimension cSize = this.m_chart.getSize();
+    this.m_chart.setPreferredSize(new Dimension(1024, 768));
     // Immediately get the image:
     BufferedImage img = this.m_chart.snapShot(1024, 368);
     // clear file filters (uncool API)
+    this.m_chart.setPreferredSize(cSize);
 
     FileFilter[] farr = this.m_filechooser.getChoosableFileFilters();
     for (int i = 0; i < farr.length; i++) {
@@ -172,6 +174,7 @@ public final class Chart2DActionSaveImageSingleton
     if (ret == JFileChooser.APPROVE_OPTION) {
       File file = this.m_filechooser.getSelectedFile();
       // get the encoding
+      // BUG FIX
       if (this.m_filechooser.getFileFilter() != null) {
         extension = this.m_filechooser.getFileFilter().getDescription().substring(2);
         System.out.println(extension);
