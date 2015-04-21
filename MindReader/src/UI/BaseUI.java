@@ -14,11 +14,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.rmi.NoSuchObjectException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -28,6 +31,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -37,6 +41,9 @@ import javax.swing.ScrollPaneConstants;
 import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
 import MindChart.ZoomOutAdapter;
+import info.monitorenter.gui.chart.Chart2D;
+import info.monitorenter.gui.chart.controls.LayoutFactory;
+import MindChart.Chart2DActionSaveImageSingleton;
 import info.monitorenter.gui.chart.views.ChartPanel;
 
 /**
@@ -64,15 +71,18 @@ public class BaseUI {
 
     public BaseUI() {
         initializeFrame();
-        cm = new ChartManager();
+        // cm = new ChartManager();
         // for local testing:
 
-        /*
-         * cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",;
-         * "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt"); try {
-         * initializeCharts(); initializeOverlay(); } catch (IOException e) { //
-         * TODO error handling System.out.println("oops"); }
-         */
+        cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",
+                "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
+        try {
+            initializeCharts();
+            initializeOverlay();
+        } catch (IOException e) {
+            // TODO error handling
+            System.out.println("oops");
+        }
 
     }
 
@@ -82,7 +92,7 @@ public class BaseUI {
     private void initializeFrame() {
 
         frame = new JFrame();
-        frame.setBounds(100, 100, 800, 720);
+        frame.setBounds(100, 100, 1000, 720);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout());
         frame.setResizable(true);
@@ -101,9 +111,8 @@ public class BaseUI {
         scrollPanel = new JScrollPane();
         scrollPanel
                 .setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        
-        scrollPanel
-                .getVerticalScrollBar().setUnitIncrement(8);
+
+        scrollPanel.getVerticalScrollBar().setUnitIncrement(8);
 
         scrollPanel
                 .setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -335,7 +344,8 @@ public class BaseUI {
             cm.openMwFile(filename);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error opening file: "
-                    + filename + "\nPlease make sure you selected the correct file");
+                    + filename
+                    + "\nPlease make sure you selected the correct file");
             e.printStackTrace();
         }
         updateCharts();
@@ -346,7 +356,8 @@ public class BaseUI {
             cm.openEventFile(filename);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error opening file: "
-                    + filename + "\nPlease make sure you selected the correct file");
+                    + filename
+                    + "\nPlease make sure you selected the correct file");
         }
         updateCharts();
 
@@ -357,7 +368,8 @@ public class BaseUI {
             cm.openIbiFile(filename);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error opening file: "
-                    + filename + "\nPlease make sure you selected the correct file");
+                    + filename
+                    + "\nPlease make sure you selected the correct file");
         }
         updateCharts();
     }
@@ -398,7 +410,7 @@ public class BaseUI {
         // now add those charts to panels
         togglePanels = new ArrayList<TogglePanel>();
         for (SynchronizedChart chart : charts) {
-            
+
             ChartPanel tmpPanel = new ChartPanel(chart);
             tmpPanel.setPreferredSize(new Dimension(200,
                     ChartManager.MINIMUM_CHART_HEIGHT));
@@ -431,7 +443,7 @@ public class BaseUI {
         SynchronizedChart overlaidChart;
         try {
             overlaidChart = cm.generateOverlay();
-        } catch(NoSuchObjectException e) {
+        } catch (NoSuchObjectException e) {
             return;
         }
         ChartPanel cPanel = new ChartPanel(overlaidChart);
@@ -468,6 +480,7 @@ public class BaseUI {
             }
 
         });
+
         colorPicker.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -480,7 +493,6 @@ public class BaseUI {
         btnPanel.add(toggle);
 
         c = new GridBagConstraints();
-        JButton exportButton = new JButton("export");
         c.fill = GridBagConstraints.HORIZONTAL;
         c.ipady = 0;
         c.gridx = 0;
@@ -489,10 +501,34 @@ public class BaseUI {
         c.insets = new Insets(0, 0, 0, 0);
         formatPanel.add(btnPanel, c);
 
+        final JButton exportButton = new JButton("export");
+                    Chart2DActionSaveImageSingleton f = Chart2DActionSaveImageSingleton.getInstance(tp.getPanel().getChart(), "save");
+        exportButton.addActionListener(f);
+                
+                new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    int imageWidth = 1424;
+                    int imageHeight = 768;
+                    JFileChooser fc = new JFileChooser();
+                    fc.showSaveDialog(exportButton);
+                    BufferedImage s = tp.getPanel().getChart().snapShot(imageWidth,
+                            imageHeight);
+                    ImageIO.write(s, "bmp", fc.getSelectedFile());
+                } catch (Exception ex) {
+                    System.out.println("Unable to create image: " + e);
+                }
+            }
+
+        };
         c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
         c.gridy = 2;
         c.gridwidth = 1;
         c.gridx = 0;
+        c.insets = new Insets(0, 5, 0, 0);
         formatPanel.add(exportButton, c);
         panel.add(formatPanel);
 
