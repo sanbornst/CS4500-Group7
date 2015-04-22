@@ -107,10 +107,11 @@ public class EventIO implements FileIO {
     long fileStart = events.get(0).timestamp.getTime();
     TracePointString p = null;
     for (Event e : events) {
-      if (e.timestamp.getTime() - fileStart >= start && e.timestamp.getTime() - fileStart <= end) { // point is in requested section
+      if ((e.timestamp.getTime() - fileStart) >= start && (e.timestamp.getTime() - fileStart) <= end) { // point is in requested section
         p = e.eventToPoint(new Date(fileStart));
-        p.setLocation(p.getX(), p.getY() + offset);
+        p.setLocation(Utils.msToSeconds((long)p.getX()), p.getY() + offset);
         channel.addPoint(p);
+        System.out.println("Point added.");
       }
     }
     
