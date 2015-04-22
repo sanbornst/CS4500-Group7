@@ -479,6 +479,8 @@ public class BaseUI {
 
         // now add those charts to panels
         togglePanels = new ArrayList<TogglePanel>();
+        JPanel channelsTab = (JPanel) sidebar.getComponentAt(CHANNELS_TAB);
+        channelsTab.removeAll();
         for (SynchronizedChart chart : charts) {
 
             ChartPanel tmpPanel = new ChartPanel(chart);
@@ -490,6 +492,8 @@ public class BaseUI {
         }
 
         addChartsToPanel(togglePanels);
+        
+        channelsTab.revalidate();
 
         // be very very quiet... we're hunting zooms
         this.setZoomListener(new ZoomOutAdapter(cm));
