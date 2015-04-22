@@ -14,6 +14,7 @@ import MindReader.ChannelInfo;
 import MindReader.EventIO;
 import MindReader.IbiIO;
 import MindReader.Utils;
+import MindReader.EventToolTip;
 
 /**
  * Class to manage & create charts from <code>ITrace2D</code>s
@@ -276,6 +277,7 @@ public class ChartManager {
         trace.setColor(colors.get(0));
         trace.setName(channel.getName());
         SynchronizedChart chart = this.generateChart(trace);
+        chart.setToolTipType(new EventToolTip());
 
         eio.read(trace, channel.getId(), START, eio.getEndTime(), 1);
 

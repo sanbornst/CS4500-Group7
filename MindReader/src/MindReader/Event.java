@@ -32,8 +32,6 @@ class Event {
    * @param beginning timestamp of beginning of data
    */
   public TracePointString eventToPoint(Date beginning) {
-    long longTime = this.timestamp.getTime() - beginning.getTime();
-    System.out.println(this.name);
     TracePointString point = new TracePointString(this.timestamp.getTime() - beginning.getTime(),
                                                   0,
                                                   this.getToolTip());
