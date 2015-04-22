@@ -11,10 +11,10 @@ import java.awt.event.MouseEvent;
  * 
  * @author Samantha Sanborn
  */
-class EventToolTip implements IToolTipType {
+public class EventToolTip implements IToolTipType {
   
   // empty constructor
-  EventToolTip() {
+  public EventToolTip() {
     
   }
   
