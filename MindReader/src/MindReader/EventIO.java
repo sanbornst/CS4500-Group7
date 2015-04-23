@@ -111,7 +111,6 @@ public class EventIO implements FileIO {
         p = e.eventToPoint(new Date(fileStart));
         p.setLocation(Utils.msToSeconds((long)p.getX()), p.getY() + offset);
         channel.addPoint(p);
-        System.out.println("Point added.");
       }
     }
     
