@@ -192,11 +192,6 @@ public class ChartManager {
             chart.setFriends(charts);
         }
 
-        // sync each chart with the previous chart in the list
-        for (int i = 1; i < charts.size(); i++) {
-            charts.get(i).setSynchronizedXStartChart(charts.get(i - 1));
-        }
-
         // my charts!
         this.allCharts = charts;
         normalizeCharts();
@@ -264,8 +259,13 @@ public class ChartManager {
      * call the normalizeAxisY method on all charts
      */
     public void normalizeCharts() {
+        SynchronizedChart first = allCharts.get(0);
+        
         for (SynchronizedChart chart : allCharts) {
             chart.normalizeAxisY();
+            
+            // sync the chart to the first chart in the list
+            chart.setSynchronizedXStartChart(first);
         }
     }
 

@@ -518,6 +518,8 @@ public class BaseUI {
             togglePanels.add(tPanel);
             addChannel((JPanel) sidebar.getComponentAt(CHANNELS_TAB), tPanel);
         }
+        
+
 
         addChartsToPanel(togglePanels);
         
@@ -748,5 +750,4 @@ public class BaseUI {
             panel.getChart().getTraces().first().setColor(color);
         }
     }
-
 }
