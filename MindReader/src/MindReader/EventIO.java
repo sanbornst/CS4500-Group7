@@ -106,6 +106,7 @@ public class EventIO implements FileIO {
     // get the starting date in ms
     long fileStart = events.get(0).timestamp.getTime();
     TracePointString p = null;
+    System.out.println(events.size());
     for (Event e : events) {
       if ((e.timestamp.getTime() - fileStart) >= start && (e.timestamp.getTime() - fileStart) <= end) { // point is in requested section
         p = e.eventToPoint(new Date(fileStart));
@@ -115,14 +116,14 @@ public class EventIO implements FileIO {
     }
     
     // set up the trace to look like an event channel (error bars specifically)?
-    if (!channel.showsErrorBars()) {
+    if (!channel.showsErrorBars() && events.size() > 1) {
       IErrorBarPolicy errors = new ErrorBarPolicyAbsoluteSummation(5, 5);
       errors.setShowNegativeYErrors(true);
       errors.setShowPositiveYErrors(true);
       IErrorBarPainter errorPainter = new ErrorBarPainterLine();
-      errors.setErrorBarPainter(errorPainter);
+      errors.addErrorBarPainter(errorPainter);
       channel.setErrorBarPolicy(errors);
-    }    
+    } 
     
   }
   
@@ -157,9 +158,10 @@ public class EventIO implements FileIO {
         // end of data
         break;
       } else if (line.length < 4) {
-        // too few parameters - error
+        throw new IOException();
       }
       try {
+        //System.out.println("Line: " + line[0] + " " + line[1] + " " + line[2] + " " + line[3]);
         events.add(new Event(line[0], // event type
                              line[1], // event name
                              df.parse(line[2] + " " + line[3]))); // timestamp
@@ -175,7 +177,7 @@ public class EventIO implements FileIO {
    */
   public long getEndTime() {
     if (events.size() > 0) {
-      return (long) (events.get(events.size() - 1).eventToPoint(events.get(0).timestamp).getX());
+      return events.get(events.size() - 1).timestamp.getTime() - events.get(0).timestamp.getTime();
     } else {
       return 0;
     }
