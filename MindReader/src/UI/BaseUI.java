@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.rmi.NoSuchObjectException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
@@ -42,8 +44,10 @@ import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
 import MindChart.ZoomOutAdapter;
 import info.monitorenter.gui.chart.Chart2D;
+import info.monitorenter.gui.chart.ITrace2D;
 import info.monitorenter.gui.chart.controls.LayoutFactory;
 import MindChart.Chart2DActionSaveImageSingleton;
+import info.monitorenter.gui.chart.traces.Trace2DSorted;
 import info.monitorenter.gui.chart.views.ChartPanel;
 
 /**
@@ -141,10 +145,9 @@ public class BaseUI {
 
     public BaseUI() {
         initializeFrame();
-        // cm = new ChartManager();
-        // for local testing:
+        //cm = new ChartManager();
 
-        cm = new ChartManager("data/PA_1.mw", "data/PA_1_event.txt",
+        cm = new ChartManager("data/CFSArmy1B_Pp37_7-14-14.mw", "data/PA_1_event.txt",
                 "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
         try {
             initializeCharts();
@@ -203,16 +206,17 @@ public class BaseUI {
         overlayPanel.setVisible(false);
 
         // button toggle separate view
-        JButton btnSeparate = new JButton("Switch View");
-        btnSeparate.setPreferredSize(new Dimension(120, 30));
-        btnSeparate.addActionListener(new ActionListener() {
+        JButton switchBtn = new JButton("Switch View");
+        switchBtn.setPreferredSize(new Dimension(120, 30));
+        switchBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
                 // swap 'em
+                swapChartPanels();
             }
         });
 
         topPanel.setLayout(new FlowLayout());
-        topPanel.add(btnSeparate);
+        topPanel.add(switchBtn);
 
         // button toggle separate view
         JPanel buttonPanel = new JPanel();
@@ -393,6 +397,7 @@ public class BaseUI {
             mainPanel.add(scrollPanel, BorderLayout.CENTER);
         }
 
+        cm.zoomOut();
         frame.revalidate();
         // revalidate and repaint
         mainPanel.revalidate();
@@ -466,6 +471,15 @@ public class BaseUI {
         overlayPanel.revalidate();
         chartPanel.repaint();
     }
+    
+    /**
+     * gets the overlay chart from the overlay panel
+     * @return the overlay chart
+     */
+    private SynchronizedChart getOverlayChart() {
+        // sorry about the double casting
+        return (SynchronizedChart) ((ChartPanel) overlayPanel.getComponent(0)).getChart();
+    }
 
     /**
      * Creates charts & adds them to the panel
@@ -491,8 +505,8 @@ public class BaseUI {
 
         addChartsToPanel(togglePanels);
 
-        // be very very quiet... we're hunting zooms
         this.setZoomListener(new ZoomOutAdapter(cm));
+        cm.zoomOut();
         scrollPanel.setViewportView(chartPanel);
         scrollPanel.revalidate();
     }
@@ -520,6 +534,7 @@ public class BaseUI {
         cPanel.setPreferredSize(new Dimension(500, 500));
         overlayPanel.setLayout(new GridLayout(1, 1));
         overlayPanel.add(cPanel);
+        chartPanel.revalidate();
     }
 
     private void addChannel(JPanel panel, TogglePanel togglePanel) {
@@ -537,19 +552,26 @@ public class BaseUI {
         formatPanel.add(lblChannel, c);
 
         JPanel btnPanel = new JPanel();
-        JButton colorPicker = new JButton("Choose color");
-
+        JButton colorPicker = new JButton("Set Color");
+        colorPicker.setPreferredSize(new Dimension(83, 30));
         btnPanel.add(colorPicker);
-        JButton toggle = new JButton("Toggle");
+        final JButton toggle = new JButton("Hide");
         final TogglePanel tp = togglePanel;
         toggle.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 toggleChart(tp);
+                // swap the text
+                if (toggle.getText().equals("Hide")) {
+                    toggle.setText("Show");
+                } else {
+                    toggle.setText("Hide");
+                }
             }
 
         });
+        toggle.setPreferredSize(new Dimension(65, 30));
 
         colorPicker.addActionListener(new ActionListener() {
             @Override
@@ -561,7 +583,17 @@ public class BaseUI {
         });
 
         btnPanel.add(toggle);
-
+        final JButton exportButton = new JButton("Export");
+                    Chart2DActionSaveImageSingleton f = 
+                            Chart2DActionSaveImageSingleton.getInstance(
+                                    tp.getPanel().getChart(),
+                                    "save",
+                                    1024,
+                                    368);
+                    
+        exportButton.addActionListener(f);
+        exportButton.setPreferredSize(new Dimension(65, 30));
+        btnPanel.add(exportButton);
         c = new GridBagConstraints();
         c.fill = GridBagConstraints.HORIZONTAL;
         c.ipady = 0;
@@ -571,20 +603,7 @@ public class BaseUI {
         c.insets = new Insets(0, 0, 0, 0);
         formatPanel.add(btnPanel, c);
 
-        final JButton exportButton = new JButton("export");
-                    Chart2DActionSaveImageSingleton f = Chart2DActionSaveImageSingleton.getInstance(tp.getPanel().getChart(), "save");
-                    
-        exportButton.addActionListener(f);
-        exportButton.setPreferredSize(new Dimension(126, 30));
-        c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridy = 2;
-        c.gridwidth = 1;
-        c.gridx = 0;
-        c.insets = new Insets(0, 5, 0, 0);
-        formatPanel.add(exportButton, c);
         panel.add(formatPanel);
-
     }
 
     /**
@@ -598,7 +617,6 @@ public class BaseUI {
         tPanel.toggleVisibility();
         chartPanel.removeAll();
         addChartsToPanel(togglePanels);
-
     }
 
     /**
@@ -617,6 +635,25 @@ public class BaseUI {
     public void display() {
         this.frame.setVisible(true);
     }
+    
+    private void propagateVisibility(ITrace2D trace, boolean visible) {
+        SynchronizedChart overlayChart = getOverlayChart();
+        SortedSet<ITrace2D> newTraces = new TreeSet<ITrace2D>();
+        newTraces.addAll(overlayChart.getTraces());
+        if (visible) {
+            newTraces.add(trace);
+        } else {
+            newTraces.remove(trace);
+        }
+        
+        overlayChart.removeAllTraces();
+        
+        for (ITrace2D newTrace : newTraces) {
+            overlayChart.addTrace(newTrace);
+        }
+        
+        overlayChart.revalidate();
+    }
 
     /**
      * helper class to keep track of panels and their toggle state
@@ -626,7 +663,13 @@ public class BaseUI {
      */
     class TogglePanel {
 
+        /**
+         * The panel to keep track of
+         */
         private ChartPanel panel;
+        /**
+         * Whether or not the panel should be visible
+         */
         private boolean visible;
 
         public TogglePanel(ChartPanel panel, boolean visible) {
@@ -634,8 +677,12 @@ public class BaseUI {
             this.visible = visible;
         }
 
+        /**
+         * Inverts the visibility of the panel
+         */
         public void toggleVisibility() {
             this.visible = !this.visible;
+           // propagateVisibility(this.panel.getChart().getTraces().first(), this.visible);
         }
 
         /**

@@ -81,11 +81,11 @@ public final class Chart2DActionSaveImageSingleton
    * @return the single instance for the given component.
    */
   public static Chart2DActionSaveImageSingleton getInstance(final Chart2D chart,
-      final String actionName) {
+      final String actionName, int width, int height) {
     Chart2DActionSaveImageSingleton result = Chart2DActionSaveImageSingleton.instances
         .get(Chart2DActionSaveImageSingleton.key(chart));
     if (result == null) {
-      result = new Chart2DActionSaveImageSingleton(chart, actionName);
+      result = new Chart2DActionSaveImageSingleton(chart, actionName, width, height);
       Chart2DActionSaveImageSingleton.instances.put(Chart2DActionSaveImageSingleton.key(chart),
           result);
     }
@@ -97,6 +97,10 @@ public final class Chart2DActionSaveImageSingleton
    * <p>
    */
   private JFileChooser m_filechooser;
+  
+  private int height;
+  
+  private int width;
 
   /**
    * Map for instances.
@@ -127,8 +131,10 @@ public final class Chart2DActionSaveImageSingleton
    *            {@link javax.swing.AbstractButton} subclasses that get this <code>Action</code>
    *            assigned ( {@link javax.swing.AbstractButton#setAction(javax.swing.Action)}).
    */
-  private Chart2DActionSaveImageSingleton(final Chart2D chart, final String colorName) {
+  private Chart2DActionSaveImageSingleton(final Chart2D chart, final String colorName, int width, int height) {
     super(chart, colorName);
+    this.height = height;
+    this.width = width;
     chart.addPropertyChangeListener(Chart2D.PROPERTY_GRID_COLOR, this);
     // configure the file chooser:
     this.m_filechooser = new JFileChooser();
@@ -140,12 +146,9 @@ public final class Chart2DActionSaveImageSingleton
    */
   public void actionPerformed(final ActionEvent e) {
     Dimension cSize = this.m_chart.getSize();
-    this.m_chart.setPreferredSize(new Dimension(1024, 768));
     // Immediately get the image:
-    BufferedImage img = this.m_chart.snapShot(1024, 368);
+    BufferedImage img = this.m_chart.snapShot(this.width, this.height);
     // clear file filters (uncool API)
-    this.m_chart.setPreferredSize(cSize);
-
     FileFilter[] farr = this.m_filechooser.getChoosableFileFilters();
     for (int i = 0; i < farr.length; i++) {
       this.m_filechooser.removeChoosableFileFilter(farr[i]);

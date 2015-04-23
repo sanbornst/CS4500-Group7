@@ -18,7 +18,7 @@ import MindReader.EventToolTip;
 
 /**
  * Class to manage & create charts from <code>ITrace2D</code>s
- *
+ * 
  * @author jordanreedie
  */
 public class ChartManager {
@@ -113,19 +113,12 @@ public class ChartManager {
      * Zooms out all charts managed by this <code>ChartManager</code>
      */
     public void zoomOut() {
-        if (reloaded) {
-            // we've made changes to the resolution, so back out to the default
-            try {
-                this.setRange(0, Utils.msToSeconds(bio.getEndTime()));
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-
-        for (SynchronizedChart chart : allCharts) {
-            chart.zoomAll();
-            chart.normalizeAxisY();
+        // we've made changes to the resolution, so back out to the default
+        try {
+            this.setRange(0, Utils.msToSeconds(bio.getEndTime()));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
         this.reloaded = false;
@@ -133,7 +126,7 @@ public class ChartManager {
 
     /**
      * Set range of charts
-     *
+     * 
      * @param start
      *            start time, in seconds
      * @param end
@@ -141,17 +134,20 @@ public class ChartManager {
      * @throws IOException
      */
     public void setRange(double start, double end) throws IOException {
-        this.reloaded = true;
         ArrayList<ChannelInfo> channels = bio.getChannels();
         long start_ms = Utils.secondsToMs(start);
         long end_ms = Utils.secondsToMs(end);
-        for (int i = 0; i < channels.size(); i++) {
-            ITrace2D trace = mwCharts.get(i).getTraces().first();
-            trace.removeAllPoints();
-            bio.read(trace, channels.get(i).getId(), start_ms, end_ms,
-                    bio.toFrequency(start_ms, end_ms, NUM_POINTS));
+        if (this.reloaded) {
+            for (int i = 0; i < channels.size(); i++) {
+                ITrace2D trace = mwCharts.get(i).getTraces().first();
+                trace.removeAllPoints();
+                bio.read(trace, channels.get(i).getId(), start_ms, end_ms,
+                        bio.toFrequency(start_ms, end_ms, NUM_POINTS));
+            }
         }
-
+        if (end != bio.getEndTime()) {
+            this.reloaded = true;
+        }
         // make sure the chart views are set appropriately
         for (SynchronizedChart chart : allCharts) {
             chart.setXRange(start, end);
@@ -162,7 +158,7 @@ public class ChartManager {
 
     /**
      * Generates a list of charts
-     *
+     * 
      * @return the generated list of charts
      * @throws IOException
      */
@@ -203,7 +199,7 @@ public class ChartManager {
 
     /**
      * Insert <code>toInsert</code> after the ECG chart in <code>charts</code>
-     *
+     * 
      * @param toInsert
      *            the chart to insert
      * @param charts
@@ -213,6 +209,7 @@ public class ChartManager {
             List<SynchronizedChart> charts) {
 
         int initialSize = charts.size();
+        // searching for ECG chart
         for (int i = 0; i < initialSize; i++) {
             if (charts.get(i).getName().contains("ECG")) {
                 charts.add(i + 1, toInsert);
@@ -220,6 +217,8 @@ public class ChartManager {
         }
 
         // if the ibi chart never got inserted, do it now
+        // this would occur if ECG isn't in the MW file,
+        // or the mw file hasn't been loaded yet
         if (charts.size() == initialSize) {
             charts.add(toInsert);
         }
@@ -227,7 +226,7 @@ public class ChartManager {
 
     /**
      * Generate charts from the currently open MindWare (.mw) file
-     *
+     * 
      * @return
      * @throws IOException
      */
@@ -258,7 +257,7 @@ public class ChartManager {
     /**
      * call the normalizeAxisY method on all charts
      */
-    private void normalizeCharts() {
+    public void normalizeCharts() {
         for (SynchronizedChart chart : allCharts) {
             chart.normalizeAxisY();
         }
@@ -266,7 +265,7 @@ public class ChartManager {
 
     /**
      * Generate the event chart
-     *
+     * 
      * @return
      * @throws IOException
      */
@@ -286,7 +285,7 @@ public class ChartManager {
 
     /**
      * Generate the IBI chart
-     *
+     * 
      * @return
      * @throws IOException
      */
@@ -304,7 +303,7 @@ public class ChartManager {
 
     /**
      * Generate the overlay chart
-     *
+     * 
      * @return
      * @throws NoSuchObjectException
      */
@@ -314,6 +313,7 @@ public class ChartManager {
             throw new NoSuchObjectException(
                     "Mindware File has not been read yet!");
         }
+
         SynchronizedChart overlay = new SynchronizedChart();
 
         // only use mw charts for the overlay, as the ibi & event files throw
@@ -327,7 +327,7 @@ public class ChartManager {
 
     /**
      * Generate charts from a list of <code>ITrace2D</code>s.
-     *
+     * 
      * @param traces
      *            The data to generate the charts from
      * @return synchronized charts from the provided traces
@@ -347,7 +347,7 @@ public class ChartManager {
 
     /**
      * Generate a single synchronizable chart from an <code>ITrace2D</code>.
-     *
+     * 
      * @param data
      *            the trace with which to generate the chart
      * @return the generated, synchronizable chart
@@ -361,7 +361,7 @@ public class ChartManager {
 
     /**
      * Opens the given path to the MindWare file
-     *
+     * 
      * @param path
      *            the filepath to open
      * @throws IOException
@@ -376,7 +376,7 @@ public class ChartManager {
 
     /**
      * Opens the given path to the IBI file
-     *
+     * 
      * @param path
      *            the filepath to open
      * @throws IOException
@@ -395,7 +395,7 @@ public class ChartManager {
 
     /**
      * Opens the given path to the event file
-     *
+     * 
      * @param path
      * @throws IOException
      */

@@ -269,10 +269,17 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
      */
     public void normalizeAxisY() {
         //TODO needs a bit o' tweaking
+        // it seems the problem is getTraces.getMax<x/y> return the max for ALL
+        // points in the trace, not just the currently visible ones...
+        // not sure a way around that
         double max = this.getTraces().first().getMaxY();
+        
         double min = this.getTraces().first().getMinY();
-        max += max * (max > 0 ? 0.2 : -0.2);
-        min -= min * (min > 0 ? 0.2 : -0.2);
+        double diff = Math.abs(max - min);
+        System.out.println("original name: " + this.getName() + " min: " + min + " max: " + max);
+
+        max += diff * 0.2;
+        min -= diff * 0.2;
 
         if (max == 0) {
             max += 0.5;
@@ -280,10 +287,8 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
         if (min == 0) {
             min -= 0.5;
         }
-
-        IAxis<IAxisScalePolicy> yAxis = (IAxis<IAxisScalePolicy>) this
-                .getAxisY();
-        yAxis.setRangePolicy(new RangePolicyFixedViewport(new Range(min, max)));
+        System.out.println("name: " + this.getName() + " min: " + min + " max: " + max);
+        this.setYRange(min, max);
     }
 
     /**
