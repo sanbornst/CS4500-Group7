@@ -47,7 +47,6 @@ import javax.swing.text.StyledDocument;
 
 import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
-import MindChart.ZoomOutAdapter;
 import info.monitorenter.gui.chart.Chart2D;
 import info.monitorenter.gui.chart.ITrace2D;
 import info.monitorenter.gui.chart.controls.LayoutFactory;
@@ -531,7 +530,14 @@ public class BaseUI {
         doc.setParagraphAttributes(0, doc.getLength(), center, false);
         resolutionIndicator.setText(Integer.toString(cm.getResolution()));
         resolutionIndicator.revalidate();
-        this.setZoomListener(new ZoomOutAdapter(cm));
+        btnReset.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cm.zoomOut();
+                resolutionIndicator.setText(Integer.toString(cm.getResolution()));
+            }
+            
+        });
         cm.zoomOut();
         scrollPanel.setViewportView(chartPanel);
         scrollPanel.revalidate();
@@ -646,23 +652,20 @@ public class BaseUI {
     }
 
     /**
-     * Sets the zoom out listener for the charts
-     * 
-     * @param l
-     *            The provided zoom listener
-     */
-    public void setZoomListener(ActionListener l) {
-        btnReset.addActionListener(l);
-    }
-
-    /**
      * As named.
      */
     public void display() {
         this.frame.setVisible(true);
     }
     
+    /**
+     * Propagates visibility changes to Overlay chart. Still experimental.
+     * @param trace
+     * @param visible
+     */
     private void propagateVisibility(ITrace2D trace, boolean visible) {
+        // the sharing of traces between the overlay chart and the other charts
+        // seems to be presenting some difficulties
         SynchronizedChart overlayChart = getOverlayChart();
         SortedSet<ITrace2D> newTraces = new TreeSet<ITrace2D>();
         newTraces.addAll(overlayChart.getTraces());
