@@ -36,9 +36,14 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 import MindChart.ChartManager;
 import MindChart.SynchronizedChart;
@@ -143,20 +148,10 @@ public class BaseUI {
      */
     private List<TogglePanel> togglePanels;
 
+    private JTextPane resolutionIndicator;
     public BaseUI() {
         initializeFrame();
-        //cm = new ChartManager();
-
-        cm = new ChartManager("data/CFSArmy1B_Pp37_7-14-14.mw", "data/PA_1_event.txt",
-                "data/PP01_ECG_Actiwave_PA_HRV_IBI_3_13 PM.txt");
-        try {
-            initializeCharts();
-            initializeOverlay();
-        } catch (IOException e) {
-            // TODO error handling
-            System.out.println("oops");
-        }
-
+        cm = new ChartManager();
     }
 
     /**
@@ -194,6 +189,10 @@ public class BaseUI {
 
         // holds the top buttons (for now, just switch view)
         JPanel topPanel = new JPanel();
+
+        JLabel lblResolution = new JLabel("Relative Resolution: ");
+        resolutionIndicator = new JTextPane();
+        resolutionIndicator.setPreferredSize(new Dimension(30, 19));
         topPanel.setPreferredSize(new Dimension(900, 60));
 
         // holds the bottom buttons (zoom, zoom out, etc)
@@ -217,6 +216,10 @@ public class BaseUI {
 
         topPanel.setLayout(new FlowLayout());
         topPanel.add(switchBtn);
+        topPanel.add(lblResolution);
+        topPanel.add(resolutionIndicator);
+
+        resolutionIndicator.setEditable(false);
 
         // button toggle separate view
         JPanel buttonPanel = new JPanel();
@@ -273,7 +276,17 @@ public class BaseUI {
                             "End value must be larger than start value!");
                 } else {
                     try {
+                        cm.setReloaded(true);
                         cm.setRange(start, end);
+                        resolutionIndicator.setText(Integer.toString(cm.getResolution()));
+                        StyledDocument doc = resolutionIndicator
+                                .getStyledDocument();
+                        SimpleAttributeSet center = new SimpleAttributeSet();
+                        StyleConstants.setAlignment(center,
+                                StyleConstants.ALIGN_CENTER);
+                        doc.setParagraphAttributes(0, doc.getLength(), center,
+                                false);
+
                     } catch (IOException e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
@@ -465,6 +478,7 @@ public class BaseUI {
             e.printStackTrace();
         }
 
+
         // required for redraw
         scrollPanel.revalidate();
         chartPanel.revalidate();
@@ -509,6 +523,12 @@ public class BaseUI {
         
         channelsTab.revalidate();
 
+        StyledDocument doc = resolutionIndicator.getStyledDocument();
+        SimpleAttributeSet center = new SimpleAttributeSet();
+        StyleConstants.setAlignment(center, StyleConstants.ALIGN_CENTER);
+        doc.setParagraphAttributes(0, doc.getLength(), center, false);
+        resolutionIndicator.setText(Integer.toString(cm.getResolution()));
+        resolutionIndicator.revalidate();
         this.setZoomListener(new ZoomOutAdapter(cm));
         cm.zoomOut();
         scrollPanel.setViewportView(chartPanel);
@@ -624,7 +644,7 @@ public class BaseUI {
     }
 
     /**
-     * Sets the zoom listener for the charts
+     * Sets the zoom out listener for the charts
      * 
      * @param l
      *            The provided zoom listener

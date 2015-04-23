@@ -276,7 +276,6 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
         
         double min = this.getTraces().first().getMinY();
         double diff = Math.abs(max - min);
-        System.out.println("original name: " + this.getName() + " min: " + min + " max: " + max);
 
         max += diff * 0.2;
         min -= diff * 0.2;
@@ -287,7 +286,7 @@ public class XZoomPanChart extends Chart2D implements KeyListener,
         if (min == 0) {
             min -= 0.5;
         }
-        System.out.println("name: " + this.getName() + " min: " + min + " max: " + max);
+
         this.setYRange(min, max);
     }
 

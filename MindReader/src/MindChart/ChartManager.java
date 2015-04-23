@@ -86,6 +86,11 @@ public class ChartManager {
      * The number of points per channel to have on screen at one time
      */
     private int NUM_POINTS = 30000;
+    
+    /**
+     * Sample rate for file reading
+     */
+    private int freq;
 
     public ChartManager() {
         bio = new BinaryIO();
@@ -141,8 +146,9 @@ public class ChartManager {
             for (int i = 0; i < channels.size(); i++) {
                 ITrace2D trace = mwCharts.get(i).getTraces().first();
                 trace.removeAllPoints();
+                this.freq = bio.toFrequency(start_ms, end_ms, NUM_POINTS);
                 bio.read(trace, channels.get(i).getId(), start_ms, end_ms,
-                        bio.toFrequency(start_ms, end_ms, NUM_POINTS));
+                        freq);
             }
         }
         if (end != bio.getEndTime()) {
@@ -246,7 +252,7 @@ public class ChartManager {
 
         // now populate traces with data!
         for (int i = 0; i < channels.size(); i++) {
-            int freq = bio.toFrequency(0, bio.getEndTime(), this.NUM_POINTS);
+            freq = bio.toFrequency(0, bio.getEndTime(), this.NUM_POINTS);
             bio.read(traces.get(i), channels.get(i).getId(), START,
                     bio.getEndTime(), freq);
         }
@@ -410,6 +416,10 @@ public class ChartManager {
         eio = new EventIO();
         eio.open(path);
     }
+    
+    public int getResolution() {
+        return this.freq;
+    }
 
     /**
      * for the hell of it
@@ -432,6 +442,20 @@ public class ChartManager {
         colors.add(Color.GREEN);
         colors.add(Color.ORANGE);
         colors.add(Color.RED);
+    }
+
+    /**
+     * @return the reloaded
+     */
+    public boolean isReloaded() {
+        return reloaded;
+    }
+
+    /**
+     * @param reloaded the reloaded to set
+     */
+    public void setReloaded(boolean reloaded) {
+        this.reloaded = reloaded;
     }
 
 }
